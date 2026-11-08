@@ -1,0 +1,2 @@
+@supabase/supabase-js 2.119.0
+Source: https://www.npmjs.com/package/@supabase/supabase-js
