@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><meta name="description" content="公開ページへのリンクをまとめた、手動で編集できるポータル。">
+<title>管理画面 | マイポータル</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%232d4bdb'/%3E%3Cpath d='M11 11h7v7h-7zm11 0h7v7h-7zm-11 11h7v7h-7zm11 0h7v7h-7z' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-page" data-admin="true">
+<header><div class="header-inner"><div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>MY PORTAL</div><span id="sync" class="sync" role="status">接続を確認しています</span><div class="header-actions"><button id="edit" type="button" hidden>管理画面</button><button id="logout" type="button" hidden>ログアウト</button></div></div></header>
+<section id="auth-panel" class="auth-panel"><h1>マイポータル</h1><p>登録済みのアカウントでログインしてください。</p><form id="login-form"><div class="field"><label for="email">メールアドレス</label><input id="email" type="email" required autocomplete="username"></div><div class="field"><label for="password">パスワード</label><input id="password" type="password" required autocomplete="current-password"></div><button id="login" type="submit" class="primary">ログイン</button></form><p id="auth-message" role="status"></p></section><main id="portal" hidden><p id="status" role="status" hidden></p><section class="admin-intro"><p class="eyebrow">PORTAL SETTINGS</p><h1>管理画面</h1><p>リンク一覧から、編集するページを選んでください。</p><a class="back-link" href="index.html">← ポータルを見る</a></section><section id="editor" hidden aria-labelledby="editor-title"><form id="editor-form"><div class="editor-head"><div><h2 id="editor-title">リンク・デザイン設定</h2><p>ページ名・リンク・アイコン・背景を変更できます。「保存して反映」でSupabaseに保存します。</p></div><button type="button" id="close-editor" aria-label="変更を取り消す">元に戻す</button></div><div class="editor-body"><p id="edit-error" class="error" role="alert" hidden></p><details class="design-settings"><summary>ポータル全体のデザイン・タイトル</summary><div class="fields"><div class="field"><label for="portal-title">ポータルのタイトル</label><input id="portal-title" maxlength="70" required></div><div class="field"><label for="portal-subtitle">ひとこと説明</label><input id="portal-subtitle" maxlength="180"></div></div><div class="field" style="margin-top:20px"><label for="background-file">ポータル全体の背景画像</label><img id="background-preview" class="bg-preview" alt="選択中の背景画像" hidden><div class="upload-box"><input id="background-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><button id="clear-background" type="button">背景を解除</button></div><p class="hint">PNG・JPEG・WebP・GIF、5MB以下。画像はSupabase Storageに保存します。</p></div></details><p id="upload-message" class="upload-message" role="status"></p><div id="conflict" hidden>他の端末で設定が更新されました。編集中の内容は保持していますが、保存はできません。キャンセルして最新内容を開き直してください。</div><div class="links-heading"><h3>登録するページ</h3><button type="button" id="add-link">＋ リンクを追加</button></div><p class="hint">同じフォルダーのページは「maeda_line.html」のように入力。別サイトは「https://…」で指定できます。最大40件。</p><label class="admin-search-label" for="link-filter">登録リンクを検索</label><input id="link-filter" type="search" placeholder="ページ名・URLで絞り込み"><p id="filter-count" role="status"></p><div id="edit-rows"></div></div><div class="editor-foot"><button type="button" id="cancel-editor">変更を取り消す</button><button id="save" type="submit" class="primary">保存して反映</button></div></form></section></main>
+
+<noscript><p style="padding:24px">リンクの表示・編集にはJavaScriptを有効にしてください。</p></noscript>
+<script src="config.js"></script>
+<script src="vendor/supabase.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

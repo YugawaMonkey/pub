@@ -1,5 +1,6 @@
 'use strict';
 const $=id=>document.getElementById(id);
+const isAdmin=document.body.dataset.admin==='true';
 const palette=[['#eaf0ff','#3c60b4'],['#f4ebdf','#9a713b'],['#e6f0eb','#4e7e69'],['#eee9f7','#8263ac']];
 // Public code contains no saved link metadata. Initial links are seeded by setup.sql.
 const demoConfig={title:'マイポータル',subtitle:'',backgroundPath:'',links:[]};
@@ -28,13 +29,13 @@ async function imageUrl(path){
  signed.set(path,{url:data.signedUrl,until:Date.now()+45*60*1000});return data.signedUrl;
 }
 async function render(){
- if(!current)return;const token=++renderToken,c=current.config;document.title=c.title;$('page-title').textContent=c.title;$('subtitle').textContent=c.subtitle;
+ if(!current||isAdmin)return;const token=++renderToken,c=current.config;document.title=c.title;$('page-title').textContent=c.title;$('subtitle').textContent=c.subtitle;
  const query=$('search').value.trim().toLowerCase();$('cards').replaceChildren();let count=0;const jobs=[];
  c.links.forEach((link,index)=>{
   if(![link.title,link.description,link.url].join(' ').toLowerCase().includes(query))return;count++;
   const a=document.createElement('a');a.className='card';a.href=link.url;a.style.setProperty('--tint',palette[index%4][0]);a.style.setProperty('--accent',palette[index%4][1]);
   const top=document.createElement('div');top.className='card-top';const icon=document.createElement('span');icon.className='icon';icon.textContent=link.icon;icon.setAttribute('aria-hidden','true');
-  if(link.iconPath)jobs.push(imageUrl(link.iconPath).then(url=>{if(token!==renderToken||!url)return;const img=document.createElement('img');img.src=url;img.alt='';img.onerror=()=>{icon.textContent=link.icon;};icon.replaceChildren(img);}));
+  if(link.iconPath)jobs.push(imageUrl(link.iconPath).then(url=>{if(token!==renderToken||!url)return;const img=document.createElement('img');img.className='card-background';img.src=url;img.alt='';img.onerror=()=>img.remove();a.prepend(img);}));
   const n=document.createElement('span');n.className='serial';n.textContent='PAGE '+String(index+1).padStart(2,'0');top.append(icon,n);
   const title=document.createElement('h3');title.textContent=link.title;const p=document.createElement('p');p.textContent=link.description;
   const bottom=document.createElement('div');bottom.className='card-bottom';const dest=document.createElement('span');dest.className='destination';dest.textContent=link.url;const arrow=document.createElement('span');arrow.className='arrow';arrow.textContent='↗';arrow.setAttribute('aria-hidden','true');bottom.append(dest,arrow);a.append(top,title,p,bottom);$('cards').append(a);
@@ -47,11 +48,11 @@ function setRow(row){const config=validateConfig(row.config);if(!Number.isSafeIn
 async function loadLatest(){
  if(!client||!user||saving)return;const generation=epoch;
  try{const {data,error}=await client.from('portal_settings').select('id,owner_id,config,revision,updated_at').eq('id','main').maybeSingle();if(generation!==epoch)return;if(error)throw error;
-  if(!data){current=null;renderToken++;$('cards').replaceChildren();document.body.style.removeProperty('--wallpaper');$('portal').hidden=true;$('edit').hidden=true;$('auth-panel').hidden=false;authMessage('このアカウントの設定がありません。管理者登録と初期SQLを確認してください。');return;}
+  if(!data){current=null;renderToken++;$('cards')?.replaceChildren();document.body.style.removeProperty('--wallpaper');$('portal').hidden=true;$('edit').hidden=true;$('auth-panel').hidden=false;authMessage('このアカウントの設定がありません。管理者登録と初期SQLを確認してください。');return;}
   if(data.owner_id!==user.id)throw Error('管理者の設定を確認してください。');
-  if($('editor').open){if(data.revision!==editRevision){$('conflict').hidden=false;$('save').disabled=true;}return;}
+  if(isAdmin&&draft){if(data.revision!==editRevision){$('conflict').hidden=false;$('save').disabled=true;}return;}
   if(current&&data.revision<current.revision)return;
-  const changed=!current||current.revision!==data.revision;setRow(data);$('auth-panel').hidden=true;$('portal').hidden=false;$('edit').hidden=false;if(changed)await render();
+  const changed=!current||current.revision!==data.revision;setRow(data);$('auth-panel').hidden=true;$('portal').hidden=false;$('edit').hidden=false;if(changed)await render();if(isAdmin&&!draft)openEditor();
  }catch(error){if(generation===epoch){if(!current)authMessage('データを取得できません。接続設定と初期SQLを確認してください。');else message('同期に失敗しました。接続が戻ると再試行します。');}}
 }
 function updateSaveState(){$('save').disabled=saving||uploading>0||!$('conflict').hidden;document.querySelectorAll('#editor input[type="file"]').forEach(input=>input.disabled=saving||uploading>0);}
@@ -72,22 +73,23 @@ async function uploadAndApply(file,apply){
 function drawRows(){
  $('edit-rows').replaceChildren();$('add-link').disabled=draft.links.length>=40;
  draft.links.forEach((link,index)=>{
-  const row=document.createElement('div');row.className='editor-row';row.dataset.iconPath=link.iconPath||'';
-  const top=document.createElement('div');top.className='row-top';const n=document.createElement('b');n.textContent='PAGE '+String(index+1).padStart(2,'0');const buttons=document.createElement('div');buttons.className='row-actions';
+  const row=document.createElement('details');row.className='editor-row';row.open=false;row.dataset.iconPath=link.iconPath||'';
+  const top=document.createElement('summary');top.className='row-top';const n=document.createElement('b');n.textContent=String(index+1).padStart(2,'0')+' · '+(link.title||'新しいリンク');const buttons=document.createElement('div');buttons.className='row-actions';
   for(const [action,label] of [['up','↑'],['down','↓'],['remove','削除']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('aria-label',(index+1)+'件目を'+({up:'上へ移動',down:'下へ移動',remove:'削除'}[action]));b.disabled=action==='up'&&index===0||action==='down'&&index===draft.links.length-1;
-   b.onclick=()=>{if(uploading||saving)return;collectDraft();let at=index;if(action==='remove')draft.links.splice(index,1);else{at=index+(action==='up'?-1:1);[draft.links[index],draft.links[at]]=[draft.links[at],draft.links[index]];}drawRows();($('edit-rows').children[Math.min(at,draft.links.length-1)]?.querySelector('input')||$('add-link')).focus();};buttons.append(b);}
+   b.onclick=event=>{event.preventDefault();if(uploading||saving)return;collectDraft();let at=index;if(action==='remove')draft.links.splice(index,1);else{at=index+(action==='up'?-1:1);[draft.links[index],draft.links[at]]=[draft.links[at],draft.links[index]];}drawRows();const active=$('edit-rows').children[Math.min(at,draft.links.length-1)];if(active)active.open=true;($('edit-rows').children[Math.min(at,draft.links.length-1)]?.querySelector('input')||$('add-link')).focus();};buttons.append(b);}
   top.append(n,buttons);row.append(top);const fields=document.createElement('div');fields.className='fields';
-  for(const [key,label,max] of [['title','ページ名',100],['url','リンク先',2048],['description','説明',240],['icon','アイコン（絵文字・文字）',16]]){const f=document.createElement('div');f.className='field';const lab=document.createElement('label');lab.htmlFor='link-'+index+'-'+key;lab.textContent=label;const input=document.createElement('input');input.id=lab.htmlFor;input.dataset.field=key;input.value=link[key]||'';input.maxLength=max;input.required=['title','url'].includes(key);f.append(lab,input);fields.append(f);}
-  const imageBox=document.createElement('div');imageBox.className='field full';const label=document.createElement('label');label.htmlFor='image-'+index;label.textContent='画像アイコン（任意・文字より優先）';const preview=document.createElement('img');preview.className='image-preview';preview.alt='アイコンのプレビュー';preview.hidden=true;
+  for(const [key,label,max] of [['title','ページ名',100],['url','リンク先',2048],['description','説明',240],['icon','アイコン（絵文字・文字）',16]]){const f=document.createElement('div');f.className='field';const lab=document.createElement('label');lab.htmlFor='link-'+index+'-'+key;lab.textContent=label;const input=document.createElement('input');input.id=lab.htmlFor;input.dataset.field=key;input.value=link[key]||'';input.maxLength=max;input.required=['title','url'].includes(key);if(key==='title')input.oninput=()=>{n.textContent=String(index+1).padStart(2,'0')+' · '+(input.value||'新しいリンク');};f.append(lab,input);fields.append(f);}
+  const imageBox=document.createElement('div');imageBox.className='field full';const label=document.createElement('label');label.htmlFor='image-'+index;label.textContent='リンクカードの背景画像（任意）';const preview=document.createElement('img');preview.className='image-preview';preview.alt='カード背景のプレビュー';preview.hidden=true;
   if(link.iconPath)imageUrl(link.iconPath).then(url=>{if(row.isConnected&&url){preview.src=url;preview.hidden=false;}}).catch(()=>{});
   const file=document.createElement('input');file.type='file';file.id=label.htmlFor;file.accept='image/png,image/jpeg,image/webp,image/gif';file.onchange=()=>uploadAndApply(file.files[0],result=>{if(row.isConnected){row.dataset.iconPath=result.path;preview.src=result.url;preview.hidden=false;}});
   const clear=document.createElement('button');clear.type='button';clear.textContent='画像を解除';clear.onclick=()=>{if(uploading||saving)return;row.dataset.iconPath='';preview.hidden=true;preview.removeAttribute('src');file.value='';};imageBox.append(label,preview,file,clear);fields.append(imageBox);row.append(fields);$('edit-rows').append(row);
  });
+ filterRows();
 }
 function openEditor(){if(!current)return;draft=structuredClone(current.config);editRevision=current.revision;$('portal-title').value=draft.title;$('portal-subtitle').value=draft.subtitle;$('edit-error').hidden=true;$('conflict').hidden=true;$('upload-message').textContent='';$('background-file').value='';$('background-preview').hidden=true;
  if(draft.backgroundPath){const target=draft;imageUrl(draft.backgroundPath).then(url=>{if(draft===target&&url){$('background-preview').src=url;$('background-preview').hidden=false;}}).catch(()=>{});}
- drawRows();updateSaveState();$('editor').showModal();$('portal-title').focus();}
-function closeEditor(){if(saving||uploading){showEditError('保存・アップロードが終わるまでお待ちください。');return;}draft=null;$('editor').close();$('edit').focus();if(!demo)loadLatest();}
+ drawRows();updateSaveState();$('editor').hidden=false;$('link-filter').value='';filterRows();}
+function closeEditor(){if(saving||uploading){showEditError('保存・アップロードが終わるまでお待ちください。');return;}draft=null;if(demo)openEditor();else loadLatest();}
 async function save(){
  if(saving||uploading||!$('conflict').hidden)return;collectDraft();let value;try{value=validateConfig(draft);}catch(e){showEditError(e.message);return;}
  saving=true;updateSaveState();$('editor').querySelector('.editor-body').inert=true;$('save').textContent='保存中…';const generation=epoch;
@@ -95,11 +97,11 @@ async function save(){
    const {data,error}=await client.from('portal_settings').update({config:value}).eq('id','main').eq('revision',editRevision).select('id,owner_id,config,revision,updated_at').maybeSingle();if(generation!==epoch)return;if(error)throw Error('保存に失敗しました。通信状態と編集権限をご確認ください。');
    if(!data){$('conflict').hidden=false;throw Error('他の端末で更新されたか、編集権限が変更されています。キャンセルして再読み込みしてください。');}setRow(data);
   }
-  draft=null;$('editor').close();$('search').value='';await render();if(generation!==epoch)return;message(demo?'プレビューに反映しました。Supabaseには保存していません。':'Supabaseに保存しました。他の端末にも反映されます。');$('edit').focus();
+  draft=null;if(isAdmin)openEditor();else {$('search').value='';}await render();if(generation!==epoch)return;message(demo?'プレビューに反映しました。Supabaseには保存していません。':'Supabaseに保存しました。他の端末にも反映されます。');
  }catch(error){if(generation===epoch)showEditError(error.message);}finally{saving=false;$('editor').querySelector('.editor-body').inert=false;$('save').textContent='保存して反映';updateSaveState();if(!demo)loadLatest();}
 }
 async function changeSession(session){
- const generation=++epoch;renderToken++;user=session?.user||null;current=null;draft=null;signed.clear();$('cards').replaceChildren();$('portal').hidden=true;$('editor').close();$('edit').hidden=true;$('auth-panel').hidden=false;$('logout').hidden=!user;document.body.style.removeProperty('--wallpaper');
+ const generation=++epoch;renderToken++;user=session?.user||null;current=null;draft=null;signed.clear();$('cards')?.replaceChildren();$('portal').hidden=true;if(isAdmin)$('editor').hidden=true;$('edit').hidden=true;$('auth-panel').hidden=false;$('logout').hidden=!user;document.body.style.removeProperty('--wallpaper');
  if(channel){client.removeChannel(channel);channel=null;}clearInterval(poll);
  if(!user){$('sync').textContent='ログインが必要です';return;}
  $('sync').textContent='接続中';await loadLatest();if(!user||generation!==epoch)return;
@@ -108,14 +110,22 @@ async function changeSession(session){
 }
 $('login-form').onsubmit=async event=>{event.preventDefault();if(!client)return;$('login').disabled=true;authMessage('ログイン中…');try{const {error}=await client.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;$('password').value='';authMessage('');}catch{authMessage('ログインできませんでした。メールアドレス・パスワード・通信状態をご確認ください。');}finally{$('login').disabled=false;}};
 $('logout').onclick=async()=>{if(demo)return;$('logout').disabled=true;const {error}=await client.auth.signOut({scope:'local'});$('logout').disabled=false;if(error)message('ログアウトできませんでした。通信状態を確認し再度お試しください。');};
-$('edit').onclick=openEditor;$('close-editor').onclick=closeEditor;$('cancel-editor').onclick=closeEditor;$('editor').addEventListener('cancel',event=>{event.preventDefault();closeEditor();});
-$('editor-form').onsubmit=event=>{event.preventDefault();save();};$('search').oninput=render;
-$('add-link').onclick=()=>{if(uploading||saving)return;collectDraft();if(draft.links.length>=40)return;draft.links.push({title:'',description:'',url:'',icon:'📄',iconPath:''});drawRows();$('edit-rows').lastElementChild.querySelector('input').focus();};
+function filterRows(){let shown=0;const q=$('link-filter').value.trim().toLowerCase();[...$('edit-rows').children].forEach(row=>{const text=[...row.querySelectorAll('input[data-field]')].map(x=>x.value).join(' ').toLowerCase();row.hidden=!!q&&!text.includes(q);if(!row.hidden)shown++;});$('filter-count').textContent=shown+' / '+draft.links.length+' 件';}
+$('edit').onclick=()=>{location.href='admin.html';};
+if(isAdmin){$('edit').textContent='ポータルへ戻る';$('edit').onclick=()=>{location.href='index.html';};
+$('close-editor').onclick=closeEditor;$('cancel-editor').onclick=closeEditor;
+$('editor-form').onsubmit=event=>{event.preventDefault();save();};
+$('add-link').onclick=()=>{if(uploading||saving)return;collectDraft();if(draft.links.length>=40)return;draft.links.push({title:'',description:'',url:'',icon:'📄',iconPath:''});drawRows();$('link-filter').value='';filterRows();$('edit-rows').lastElementChild.open=true;$('edit-rows').lastElementChild.querySelector('input').focus();};
 $('background-file').onchange=()=>uploadAndApply($('background-file').files[0],result=>{draft.backgroundPath=result.path;$('background-preview').src=result.url;$('background-preview').hidden=false;});
 $('clear-background').onclick=()=>{if(uploading||saving)return;draft.backgroundPath='';$('background-preview').hidden=true;$('background-preview').removeAttribute('src');$('background-file').value='';};
+
+$('link-filter').oninput=filterRows;
+$('editor-form').addEventListener('invalid',event=>{const row=event.target.closest('details');if(row){$('link-filter').value='';filterRows();row.open=true;}},true);
+window.addEventListener('beforeunload',event=>{if(!draft)return;collectDraft();if(saving||uploading||JSON.stringify(draft)!==JSON.stringify(current.config)){event.preventDefault();event.returnValue='';}});
+}else $('search').oninput=render;
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){signed.clear();if(current)render();loadLatest();}});
 setInterval(()=>{if(current&&document.visibilityState==='visible'){signed.clear();render();}},45*60*1000);
-if(demo){user={id:'preview'};setRow({config:demoConfig,revision:1});$('auth-panel').hidden=true;$('portal').hidden=false;$('edit').hidden=false;$('sync').textContent='プレビュー · クラウド未接続';render();}
+if(demo){user={id:'preview'};setRow({config:demoConfig,revision:1});$('auth-panel').hidden=true;$('portal').hidden=false;$('edit').hidden=false;$('sync').textContent='プレビュー · クラウド未接続';render();if(isAdmin)openEditor();}
 else if(!connection.url||!connection.publishableKey){$('login').disabled=true;$('sync').textContent='Supabase設定待ち';authMessage('Project URLと公開用キーの設定が必要です。初期設定後は画面から保存できます。');}
 else{try{
  const url=new URL(connection.url);if(url.protocol!=='https:'||url.pathname!=='/'||url.username||url.password)throw Error('Invalid URL');
@@ -123,3 +133,4 @@ else{try{
  client=supabase.createClient(connection.url,connection.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  client.auth.onAuthStateChange((event,session)=>{if(['INITIAL_SESSION','SIGNED_IN','SIGNED_OUT'].includes(event))setTimeout(()=>{if(event==='SIGNED_IN'&&user?.id===session?.user?.id)return;changeSession(session);},0);});
  }catch{$('login').disabled=true;$('sync').textContent='接続設定エラー';authMessage('Project URLとPublishable key（またはanon key）を確認してください。秘密キーは使用できません。');}}
+
