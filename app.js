@@ -9,6 +9,7 @@ const demo=!connection.url&&!connection.publishableKey&&new URLSearchParams(loca
 let client=null,user=null,current=null,draft=null,editRevision=null,channel=null,epoch=0,saving=false,uploading=0,signed=new Map(),renderToken=0,poll=null;
 function message(text){$('status').textContent=text;$('status').hidden=!text;}
 function authMessage(text){$('auth-message').textContent=text;}
+function showAuthPanel(){$('loading-panel').hidden=true;$('auth-panel').hidden=false;}
 function validateUrl(value){
  if(typeof value!=='string')throw Error('リンク先を入力してください。');value=value.trim();
  if(!value||value.length>2048||/[\u0000-\u0020\u007f\\]/.test(value)||value.startsWith('//'))throw Error('リンク先は空白のないファイル名またはHTTPS URLにしてください。');
@@ -48,12 +49,12 @@ function setRow(row){const config=validateConfig(row.config);if(!Number.isSafeIn
 async function loadLatest(){
  if(!client||!user||saving)return;const generation=epoch;
  try{const {data,error}=await client.from('portal_settings').select('id,owner_id,config,revision,updated_at').eq('id','main').maybeSingle();if(generation!==epoch)return;if(error)throw error;
-  if(!data){current=null;renderToken++;$('cards')?.replaceChildren();document.body.style.removeProperty('--wallpaper');$('portal').hidden=true;$('edit').hidden=true;$('auth-panel').hidden=false;authMessage('このアカウントの設定がありません。管理者登録と初期SQLを確認してください。');return;}
+  if(!data){current=null;renderToken++;$('cards')?.replaceChildren();document.body.style.removeProperty('--wallpaper');$('portal').hidden=true;$('edit').hidden=true;showAuthPanel();authMessage('このアカウントの設定がありません。管理者登録と初期SQLを確認してください。');return;}
   if(data.owner_id!==user.id)throw Error('管理者の設定を確認してください。');
   if(isAdmin&&draft){if(data.revision!==editRevision){$('conflict').hidden=false;$('save').disabled=true;}return;}
   if(current&&data.revision<current.revision)return;
-  const changed=!current||current.revision!==data.revision;setRow(data);$('auth-panel').hidden=true;$('portal').hidden=false;$('edit').hidden=false;if(changed)await render();if(isAdmin&&!draft)openEditor();
- }catch(error){if(generation===epoch){if(!current)authMessage('データを取得できません。接続設定と初期SQLを確認してください。');else message('同期に失敗しました。接続が戻ると再試行します。');}}
+  const changed=!current||current.revision!==data.revision;setRow(data);$('loading-panel').hidden=true;$('auth-panel').hidden=true;$('portal').hidden=false;$('edit').hidden=false;if(changed)await render();if(isAdmin&&!draft)openEditor();
+ }catch(error){if(generation===epoch){if(!current){showAuthPanel();authMessage('データを取得できません。接続設定と初期SQLを確認してください。');}else message('同期に失敗しました。接続が戻ると再試行します。');}}
 }
 function updateSaveState(){$('save').disabled=saving||uploading>0||!$('conflict').hidden;document.querySelectorAll('#editor input[type="file"]').forEach(input=>input.disabled=saving||uploading>0);}
 function collectDraft(){if(!draft)return;draft.title=$('portal-title').value;draft.subtitle=$('portal-subtitle').value;draft.links=[...$('edit-rows').children].map(row=>({title:row.querySelector('[data-field="title"]').value,description:row.querySelector('[data-field="description"]').value,url:row.querySelector('[data-field="url"]').value,icon:row.querySelector('[data-field="icon"]').value,iconPath:row.dataset.iconPath||''}));}
@@ -101,9 +102,9 @@ async function save(){
  }catch(error){if(generation===epoch)showEditError(error.message);}finally{saving=false;$('editor').querySelector('.editor-body').inert=false;$('save').textContent='保存して反映';updateSaveState();if(!demo)loadLatest();}
 }
 async function changeSession(session){
- const generation=++epoch;renderToken++;user=session?.user||null;current=null;draft=null;signed.clear();$('cards')?.replaceChildren();$('portal').hidden=true;if(isAdmin)$('editor').hidden=true;$('edit').hidden=true;$('auth-panel').hidden=false;$('logout').hidden=!user;document.body.style.removeProperty('--wallpaper');
+ const generation=++epoch;renderToken++;user=session?.user||null;current=null;draft=null;signed.clear();$('cards')?.replaceChildren();$('portal').hidden=true;if(isAdmin)$('editor').hidden=true;$('edit').hidden=true;$('auth-panel').hidden=true;$('loading-panel').hidden=false;$('logout').hidden=!user;document.body.style.removeProperty('--wallpaper');
  if(channel){client.removeChannel(channel);channel=null;}clearInterval(poll);
- if(!user){$('sync').textContent='ログインが必要です';return;}
+ if(!user){showAuthPanel();$('sync').textContent='ログインが必要です';return;}
  $('sync').textContent='接続中';await loadLatest();if(!user||generation!==epoch)return;
  channel=client.channel('portal-main-'+epoch).on('postgres_changes',{event:'UPDATE',schema:'public',table:'portal_settings',filter:'id=eq.main'},()=>{if(generation===epoch)loadLatest();}).subscribe(status=>{if(generation!==epoch)return;if(status==='SUBSCRIBED'){$('sync').textContent='リアルタイム同期中';loadLatest();}else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status))$('sync').textContent='再接続待ち · 定期確認中';});
  poll=setInterval(()=>{if(document.visibilityState==='visible')loadLatest();},60000);
@@ -125,12 +126,12 @@ window.addEventListener('beforeunload',event=>{if(!draft)return;collectDraft();i
 }else $('search').oninput=render;
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){signed.clear();if(current)render();loadLatest();}});
 setInterval(()=>{if(current&&document.visibilityState==='visible'){signed.clear();render();}},45*60*1000);
-if(demo){user={id:'preview'};setRow({config:demoConfig,revision:1});$('auth-panel').hidden=true;$('portal').hidden=false;$('edit').hidden=false;$('sync').textContent='プレビュー · クラウド未接続';render();if(isAdmin)openEditor();}
-else if(!connection.url||!connection.publishableKey){$('login').disabled=true;$('sync').textContent='Supabase設定待ち';authMessage('Project URLと公開用キーの設定が必要です。初期設定後は画面から保存できます。');}
+if(demo){user={id:'preview'};setRow({config:demoConfig,revision:1});$('loading-panel').hidden=true;$('auth-panel').hidden=true;$('portal').hidden=false;$('edit').hidden=false;$('sync').textContent='プレビュー · クラウド未接続';render();if(isAdmin)openEditor();}
+else if(!connection.url||!connection.publishableKey){showAuthPanel();$('login').disabled=true;$('sync').textContent='Supabase設定待ち';authMessage('Project URLと公開用キーの設定が必要です。初期設定後は画面から保存できます。');}
 else{try{
  const url=new URL(connection.url);if(url.protocol!=='https:'||url.pathname!=='/'||url.username||url.password)throw Error('Invalid URL');
  if(!/^sb_publishable_/.test(connection.publishableKey)){const payload=JSON.parse(atob(connection.publishableKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));if(payload.role!=='anon')throw Error('Use public key');}
  client=supabase.createClient(connection.url,connection.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
  client.auth.onAuthStateChange((event,session)=>{if(['INITIAL_SESSION','SIGNED_IN','SIGNED_OUT'].includes(event))setTimeout(()=>{if(event==='SIGNED_IN'&&user?.id===session?.user?.id)return;changeSession(session);},0);});
- }catch{$('login').disabled=true;$('sync').textContent='接続設定エラー';authMessage('Project URLとPublishable key（またはanon key）を確認してください。秘密キーは使用できません。');}}
+ }catch{showAuthPanel();$('login').disabled=true;$('sync').textContent='接続設定エラー';authMessage('Project URLとPublishable key（またはanon key）を確認してください。秘密キーは使用できません。');}}
 
