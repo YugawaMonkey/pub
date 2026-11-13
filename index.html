@@ -12,6 +12,17 @@
 <section id="loading-panel" class="loading-panel" role="status" aria-live="polite"><span class="loading-spinner" aria-hidden="true"></span><p>読み込み中…</p></section><section id="auth-panel" class="auth-panel" hidden><h1>マイポータル</h1><p>登録済みのアカウントでログインしてください。</p><form id="login-form"><div class="field"><label for="email">メールアドレス</label><input id="email" type="email" required autocomplete="username"></div><div class="field"><label for="password">パスワード</label><input id="password" type="password" required autocomplete="current-password"></div><button id="login" type="submit" class="primary">ログイン</button></form><p id="auth-message" role="status"></p></section><main id="portal" hidden>
 <p id="status" role="status" hidden></p>
 <section class="hero" aria-labelledby="page-title"><div><p class="eyebrow">YOUR PERSONAL COLLECTION</p><h1 id="page-title">マイポータル</h1><p id="subtitle">必要なページへ、ここから。</p></div><div class="collection-mark" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="18" height="18" rx="4"/><rect x="37" y="9" width="18" height="18" rx="4"/><rect x="9" y="37" width="18" height="18" rx="4"/><path d="M37 46h18m-9-9v18"/></svg></div></section>
+<section aria-labelledby="apps-title">
+<div class="list-top"><div class="list-label"><h2 id="apps-title">アプリ</h2></div></div>
+<div class="cards">
+<a class="card" href="subscription-manager.html" style="--tint:#eaf0ff;--accent:#3c60b4">
+<div class="card-top"><span class="icon" aria-hidden="true">↻</span></div>
+<h3>サブスクリプション管理</h3>
+<p>契約料金・更新日・解約期限を管理</p>
+<div class="card-bottom"><span>アプリを開く</span><span class="arrow" aria-hidden="true">→</span></div>
+</a>
+</div>
+</section>
 <section aria-labelledby="links-title"><div class="list-top"><div class="list-label"><h2 id="links-title">ページ一覧</h2><span class="count" id="count">4</span></div><label class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span class="sr-only">ページを検索</span><input id="search" type="search" placeholder="ページを検索" autocomplete="off"></label></div><div id="cards" class="cards"></div><p id="empty" class="empty" hidden>該当するページがありません。<br>検索語を変更してください。</p></section>
 <aside class="help"><p>設定はSupabaseに保存されます。編集後に「保存して反映」を押すと、他の端末にも反映されます。</p></aside>
 <footer><span>MY PORTAL / PERSONAL COLLECTION</span><span>ひとつの入口から、それぞれのページへ。</span></footer>

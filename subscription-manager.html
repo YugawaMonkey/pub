@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>サブスクリプション管理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #242039;
+      --muted: #615c73;
+      --line: #e6e2ee;
+      --paper: #fff;
+      --back: #f8f7fb;
+      --violet: #2d4bdb;
+      --font: "Yu Gothic UI", "Hiragino Sans", Meiryo, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--back); color: var(--ink); font: 15px/1.55 var(--font); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button, input, select, textarea, summary { border-radius: 8px; }
+    :focus-visible { outline: 3px solid #795ed6; outline-offset: 3px; }
+    h1, h2, h3, p { margin: 0; }
+    .wrap { width: min(1220px, calc(100% - 64px)); margin-inline: auto; }
+    header { background: var(--paper); border-bottom: 1px solid var(--line); }
+    .top { min-height: 71px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; letter-spacing: .015em; }
+    .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #ece7ff; color: var(--violet); font-size: 19px; }
+    .actions, .form-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .btn { padding: 9px 14px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-weight: 700; }
+    .btn:hover { background: #f1edf8; }
+    .primary { background: var(--violet); border-color: var(--violet); color: white; }
+    .primary:hover { background: #203cbe; }
+    .danger { color: #a42e42; }
+    main { padding-block: 30px 48px; }
+    .hero { background: #202e57; color: #fff; padding: 34px 38px; border-radius: 20px; display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+    h1 { font-size: clamp(26px, 4vw, 44px); line-height: 1.2; letter-spacing: -.045em; }
+    .hero p { margin-top: 11px; color: #e1daf3; }
+    .hero time { color: #e1daf3; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .metrics { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .metric { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
+    .metric p { color: var(--muted); font-size: 13px; }
+    .metric strong { display: block; margin: 3px 0; font-size: 27px; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+    .metric .metric-unit { font-size: 13px; margin-inline-start: 3px; letter-spacing: 0; }
+    section { margin-top: 28px; }
+    .heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 11px; }
+    h2 { font-size: 21px; letter-spacing: -.025em; }
+    .hint { color: var(--muted); font-size: 13px; }
+    .queue { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .due-card { text-align: left; min-width: 0; padding: 13px 15px; border: 1px solid #e9d8b6; border-radius: 12px; background: #fff7e6; color: var(--ink); }
+    .due-card:hover { border-color: #986b26; }
+    .due-card.overdue { background: #fcecf0; border-color: #edc6d1; }
+    .due-card.overdue:hover { border-color: #aa4f65; }
+    .due-card strong { display: block; margin-top: 3px; font-size: 17px; overflow-wrap: anywhere; }
+    .due-card span { font-size: 13px; color: #704c1b; }
+    .due-card.overdue span { color: #83364c; }
+    .empty { grid-column: 1 / -1; padding: 14px 16px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .toolbar { display: grid; grid-template-columns: minmax(190px, 1fr) repeat(3, auto); gap: 10px; padding: 13px; border-bottom: 1px solid var(--line); }
+    input, select, textarea { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid #cec9dc; background: var(--paper); color: var(--ink); }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; min-width: 900px; border-collapse: collapse; text-align: left; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { background: #f5f3fa; color: #514965; font-size: 12px; white-space: nowrap; }
+    td { font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fbfaff; }
+    td:first-child { min-width: 185px; max-width: 305px; overflow-wrap: anywhere; }
+    .service { border: 0; background: transparent; color: #423282; text-align: left; padding: 2px 0; font-weight: 800; }
+    .service:hover { text-decoration: underline; }
+    .service-meta { display: block; color: var(--muted); font-size: 12px; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .tone-active { background: #dff4e9; color: #1e6049; }
+    .tone-trial { background: #efe9fe; color: #54378d; }
+    .tone-ending { background: #fff0d5; color: #754b15; }
+    .tone-done { background: #eeedf2; color: #4d485c; }
+    .tone-license { background: #dff0f8; color: #285a73; }
+    .date, .money { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .missing { color: var(--muted); }
+    .table-foot { border-top: 1px solid var(--line); padding: 8px 13px; color: var(--muted); font-size: 12px; }
+    #notice { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; background: #e8f4ec; color: #22533c; }
+    #notice.warn { background: #fff0db; color: #6f441d; }
+    dialog { width: min(620px, calc(100% - 24px)); max-height: calc(100% - 24px); padding: 0; border: 1px solid var(--line); border-radius: 17px; color: var(--ink); box-shadow: 0 24px 75px #17142f38; }
+    dialog::backdrop { background: #17142f75; }
+    form { padding: 22px; }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; margin: 15px 0; }
+    label { display: grid; gap: 3px; align-content: start; font-weight: 700; font-size: 13px; }
+    .wide { grid-column: 1 / -1; }
+    textarea { resize: vertical; }
+    .spacer { flex: 1; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    @media (max-width: 760px) {
+      .wrap { width: calc(100% - 28px); }
+      .top { padding-block: 10px; flex-wrap: wrap; }
+      main { padding-top: 16px; }
+      .hero { padding: 24px; align-items: start; flex-direction: column; gap: 10px; }
+      .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .queue { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metric { padding: 12px; }
+      .metric strong { font-size: 22px; }
+    }
+    @media (max-width: 450px) {
+      .top .actions { width: 100%; }
+      .top .btn { padding-inline: 9px; font-size: 13px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .metric:last-child { grid-column: 1 / -1; }
+      .queue { grid-template-columns: 1fr; }
+    }
+    [hidden] { display: none !important; }
+    button:disabled { cursor: wait; opacity: .55; }
+    .auth-screen { max-width: 490px; margin: 0 auto; }
+    .auth-card { padding: 24px; }
+    .auth-card form { display: grid; padding: 0; margin-top: 16px; gap: 12px; }
+    .auth-card .btn { justify-self: start; }
+    .auth-card h1 { font-size: 27px; }
+    .auth-card p { margin-top: 8px; }
+    #editor-message { margin-top: 10px; color: #a42e42; }
+    #session-label { margin-block: 12px 0; overflow-wrap: anywhere; }
+
+    a.btn { display: inline-block; text-decoration: none; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top wrap">
+      <a class="btn" href="./index.html">← ポータルへ</a>
+      <div class="actions" id="account-actions" hidden>
+        <button class="btn" id="refresh" type="button">最新に更新</button>
+        <button class="btn" id="backup" type="button">バックアップ保存</button>
+        <button class="btn" id="restore" type="button">読み込み</button>
+        <button class="btn primary" id="add" type="button">＋ 契約を追加</button>
+        <input id="backup-file" type="file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <div id="notice" role="status" hidden></div>
+    <section id="auth-screen" class="auth-screen" aria-labelledby="auth-heading">
+      <div class="panel auth-card">
+        <h1 id="auth-heading">サブスクリプション管理</h1>
+        <p class="hint" id="auth-description" role="status">ポータルのログイン状態を確認しています…</p>
+        <p><a class="btn primary" href="./index.html">ポータルを開く</a></p>
+      </div>
+    </section>
+    <div id="dashboard" hidden>
+    <div class="hero">
+      <div><h1>サブスクリプション管理</h1><p>料金と期限をまとめて、更新・解約の見落としを防ぐ。</p></div>
+      <time id="today"></time>
+    </div>
+    <p class="hint" id="session-label"></p>
+    <div class="metrics">
+      <div class="metric"><p>月額換算の目安</p><strong id="monthly"></strong><p id="monthly-note"></p></div>
+      <div class="metric"><p>管理中の契約</p><strong id="active"></strong><p>継続・一時契約・終了予定</p></div>
+      <div class="metric"><p>更新日・解約期限ともに未登録</p><strong id="missing-dates"></strong><p>管理中の契約のうち</p></div>
+    </div>
+    <section aria-labelledby="queue-heading">
+      <div class="heading"><h2 id="queue-heading">期限の確認</h2><p class="hint">今後30日と、日付を過ぎた管理中の契約</p></div>
+      <div id="queue" class="queue"></div>
+    </section>
+    <section aria-labelledby="list-heading">
+      <div class="heading"><h2 id="list-heading">契約一覧</h2><p class="hint" id="storage-label">Supabaseから読み込み中</p></div>
+      <div class="panel">
+        <div class="toolbar">
+          <input id="search" type="search" placeholder="サービス・支払い方法・メモを検索" aria-label="契約を検索">
+          <select id="status-filter" aria-label="契約状況で絞り込む">
+            <option value="">すべての契約状況</option><option value="active">管理中のみ</option>
+          </select>
+          <select id="date-filter" aria-label="日付の登録状況で絞り込む">
+            <option value="">すべての日付</option><option value="missing">更新日・解約期限ともに未登録</option>
+          </select>
+          <select id="sort" aria-label="並べ替え">
+            <option value="default">期限が近い順</option><option value="name">サービス名順</option><option value="amount">月額換算が高い順</option>
+          </select>
+        </div>
+        <div class="table-scroll" tabindex="0" aria-label="契約一覧表">
+          <table>
+            <thead><tr><th scope="col">サービス</th><th scope="col">契約状況</th><th scope="col">料金・周期</th><th scope="col">次回更新日</th><th scope="col">解約期限</th><th scope="col">利用終了日</th><th scope="col">支払いタグ</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <p class="table-foot" id="count" aria-live="polite"></p>
+      </div>
+    </section>
+    </div>
+  </main>
+  <dialog id="editor" aria-labelledby="editor-title">
+    <form id="form">
+      <h2 id="editor-title"></h2>
+      <p id="editor-message" role="status" hidden></p>
+      <div class="fields">
+        <label class="wide">サービス名 <input name="name" required maxlength="120"></label>
+        <label>契約状況 <select name="status"></select></label>
+        <label>元の分類・契約経路 <input name="platform" maxlength="80" placeholder="例：Apple、Web"></label>
+        <label>料金（円） <input name="amount" type="number" min="0" max="999999999" step="1" placeholder="不明なら空欄"></label>
+        <label>請求周期 <select name="cycle"><option value="">未登録</option><option value="month">毎月</option><option value="year">毎年</option><option value="once">買い切り</option></select></label>
+        <label>次回更新日 <input name="renew" type="date" min="1900-01-01" max="9999-12-31"></label>
+        <label>解約手続きの期限 <input name="deadline" type="date" min="1900-01-01" max="9999-12-31"></label>
+        <label>利用終了日 <input name="end" type="date" min="1900-01-01" max="9999-12-31"></label>
+        <label>支払いタグ <input name="payment" maxlength="120" placeholder="例：Visa、MasterCard"></label>
+        <label class="wide">メモ <textarea name="notes" rows="3" maxlength="3000"></textarea></label>
+      </div>
+      <div class="form-actions">
+        <button class="btn danger" type="button" id="remove">削除</button><span class="spacer"></span>
+        <button class="btn" type="button" id="close">閉じる</button>
+        <button class="btn primary" id="save" type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+  <script src="./config.js"></script>
+  <script src="./vendor/supabase.js"></script>
+  <script>
+    "use strict";
+    const $ = (selector) => document.querySelector(selector);
+    const statuses = new Map([
+      ["継続契約中", "active"], ["一時契約中", "trial"], ["契約終了予定", "ending"],
+      ["解約済み", "done"], ["永続ライセンス", "license"]
+    ]);
+    const cycles = new Map([["month", "月"], ["year", "年"], ["once", "買い切り"]]);
+    const tracked = new Set(["継続契約中", "一時契約中", "契約終了予定"]);
+    const dateFields = [["deadline", "解約期限"], ["renew", "更新日"], ["end", "利用終了日"]];
+    const textLimits = { id: 120, name: 120, platform: 80, payment: 120, notes: 3000 };
+    const yen = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" });
+    const collator = new Intl.Collator("ja", { numeric: true, sensitivity: "base" });
+    const editor = $("#editor");
+    const form = $("#form");
+    function dateString(date = new Date()) {
+      return [date.getFullYear(), date.getMonth() + 1, date.getDate()]
+        .map((part) => String(part).padStart(2, "0")).join("-");
+    }
+    
+    function dayNumber(iso) {
+      return Date.parse(iso + "T00:00:00Z") / 86400000;
+    }
+    
+    function validateBackup(data) {
+      if (data?.version !== 1 || !Array.isArray(data.records)) throw new Error("対応するバックアップファイルを選んでください。");
+      const ids = new Set();
+      return data.records.map((record) => {
+        if (!record || typeof record !== "object") throw new Error("契約データの形式が正しくありません。");
+        const clean = {};
+        for (const [key, limit] of Object.entries(textLimits)) {
+          if (typeof record[key] !== "string" || record[key].length > limit) throw new Error("契約データの文字欄が正しくありません。");
+          clean[key] = record[key].trim();
+        }
+        if (!clean.id || !clean.name || ids.has(clean.id) || !statuses.has(record.status)) {
+          throw new Error("契約名・契約状況・識別子を確認してください。");
+        }
+        ids.add(clean.id);
+        clean.status = record.status;
+        clean.amount = record.amount;
+        clean.cycle = record.cycle;
+        if ((clean.amount !== null && (!Number.isInteger(clean.amount) || clean.amount < 0 || clean.amount > 999999999)) ||
+            (clean.cycle !== "" && !cycles.has(clean.cycle))) throw new Error("料金または請求周期の形式が正しくありません。");
+        for (const [key] of dateFields) {
+          const value = record[key];
+          if (value !== "" && (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+              value < "1900-01-01" || !Number.isFinite(dayNumber(value)) ||
+              new Date(dayNumber(value) * 86400000).toISOString().slice(0, 10) !== value)) {
+            throw new Error("日付の形式が正しくありません。");
+          }
+          clean[key] = value;
+        }
+        return clean;
+      });
+    }
+    
+    function notify(message, warning = false) {
+      const notice = $("#notice");
+      notice.textContent = message;
+      notice.classList.toggle("warn", warning);
+      notice.hidden = !message;
+    }
+    
+    function node(tag, text, classes) {
+      const element = document.createElement(tag);
+      if (text !== undefined) element.textContent = text;
+      if (classes) element.className = classes;
+      return element;
+    }
+    
+    function option(select, value, text) {
+      const item = node("option", text);
+      item.value = value;
+      select.append(item);
+    }
+    
+    function missingDates(record) {
+      return tracked.has(record.status) && !record.renew && !record.deadline;
+    }
+    
+    function monthly(record) {
+      if (record.amount === null) return null;
+      if (record.cycle === "month") return record.amount;
+      if (record.cycle === "year") return record.amount / 12;
+      return null;
+    }
+    
+    function firstDate(record) {
+      return dateFields.map(([key]) => record[key]).filter(Boolean).sort()[0] || "9999-99-99";
+    }
+    
+    function renderQueue(active, today) {
+      const queue = $("#queue");
+      const events = active.flatMap((record) => dateFields.flatMap(([key, label]) => {
+        if (!record[key]) return [];
+        const date = record[key];
+        const days = dayNumber(date) - dayNumber(today);
+        return days <= 30 ? [{ record, date, days, label }] : [];
+      })).sort((a, b) => {
+        const urgency = (days) => days < 0 ? 1 : 0;
+        const rank = urgency(a.days) - urgency(b.days);
+        return rank || (a.days < 0 ? b.days - a.days : a.days - b.days);
+      });
+      queue.replaceChildren();
+      if (!events.length) {
+        queue.append(node("p", "該当する期限はありません。契約一覧から日付を登録できます。", "empty"));
+        return;
+      }
+      for (const { record, date, days, label } of events) {
+        const card = node("button", undefined, days < 0 ? "due-card overdue" : "due-card");
+        card.type = "button";
+        const timing = days < 0 ? `${-days}日経過` : days === 0 ? "今日" : `あと${days}日`;
+        card.append(node("span", `${label} · ${timing}`), node("strong", record.name), node("span", date.replaceAll("-", "/")));
+        card.addEventListener("click", () => openEditor(record));
+        queue.append(card);
+      }
+    }
+    
+    function renderRows() {
+      const query = $("#search").value.trim().normalize("NFKC").toLocaleLowerCase("ja");
+      const status = $("#status-filter").value;
+      const date = $("#date-filter").value;
+      const sort = $("#sort").value;
+      const visible = records.filter((record) => {
+        const matchesStatus = !status || (status === "active" ? tracked.has(record.status) : record.status === status);
+        const haystack = [record.name, record.payment, record.platform, record.notes].join(" ").normalize("NFKC").toLocaleLowerCase("ja");
+        return matchesStatus && (!date || missingDates(record)) && (!query || haystack.includes(query));
+      });
+      visible.sort((a, b) => {
+        const byName = collator.compare(a.name, b.name);
+        if (sort === "name") return byName;
+        if (sort === "amount") return (monthly(b) ?? -1) - (monthly(a) ?? -1) || byName;
+        return Number(tracked.has(b.status)) - Number(tracked.has(a.status)) ||
+          firstDate(a).localeCompare(firstDate(b)) || byName;
+      });
+      const tbody = $("#rows");
+      tbody.replaceChildren();
+      if (!visible.length) {
+        const cell = node("td", "条件に一致する契約はありません。", "missing");
+        cell.colSpan = 7;
+        const row = node("tr");
+        row.append(cell);
+        tbody.append(row);
+      }
+      for (const record of visible) {
+        const row = node("tr");
+        const service = node("td");
+        const edit = node("button", record.name, "service");
+        edit.type = "button";
+        edit.setAttribute("aria-label", record.name + "を編集");
+        edit.addEventListener("click", () => openEditor(record));
+        service.append(edit);
+        if (record.platform) service.append(node("span", record.platform, "service-meta"));
+        const statusCell = node("td");
+        statusCell.append(node("span", record.status, "pill tone-" + statuses.get(record.status)));
+        const cycle = record.cycle === "once" ? "（買い切り）" : record.cycle ? " / " + cycles.get(record.cycle) : "";
+        const price = record.amount === null ? (record.notes.includes("無料トライアル") ? "無料トライアル" : "—") : yen.format(record.amount) + cycle;
+        row.append(service, statusCell, node("td", price, record.amount === null ? "missing" : "money"));
+        for (const key of ["renew", "deadline", "end"]) {
+          row.append(node("td", record[key] ? record[key].replaceAll("-", "/") : "—", record[key] ? "date" : "missing"));
+        }
+        row.append(node("td", record.payment.replaceAll(",", "、") || "—"));
+        tbody.append(row);
+      }
+      $("#count").textContent = `${visible.length} / ${records.length} 件表示`;
+    }
+    
+    function render() {
+      const today = dateString();
+      $("#today").dateTime = today;
+      $("#today").textContent = today.replaceAll("-", "/");
+      const active = records.filter((record) => tracked.has(record.status));
+      const billing = active.filter((record) => record.cycle !== "once" && (!record.end || record.end >= today));
+      const amounts = billing.map(monthly);
+      $("#monthly").replaceChildren(
+        document.createTextNode(amounts.some((amount) => amount !== null) ? yen.format(Math.round(amounts.reduce((sum, amount) => sum + (amount ?? 0), 0))) : "—"),
+        node("span", "/ 月", "metric-unit")
+      );
+      const unknown = amounts.filter((amount) => amount === null).length;
+      $("#monthly-note").textContent = unknown ? `料金・周期が未登録の${unknown}件を除く` : "年払いは12か月で換算";
+      $("#active").replaceChildren(document.createTextNode(active.length), node("span", "件", "metric-unit"));
+      $("#missing-dates").replaceChildren(document.createTextNode(active.filter(missingDates).length), node("span", "件", "metric-unit"));
+      renderQueue(active, today);
+      renderRows();
+    }
+    
+    
+    const table = "subscription_items";
+    const columns = "id,name,status,amount,cycle,renew_on,cancel_by,ends_on,payment,platform,notes,revision";
+    let client;
+    let account;
+    let records = [];
+    let draft = null;
+    let newId = null;
+    let busy = false;
+    let ready = false;
+    let loading = false;
+    let accountEpoch = 0;
+    let loadEpoch = 0;
+    
+    function toDatabase(record) {
+      const { id, name, status, amount, cycle, renew, deadline, end, payment, platform, notes } = record;
+      return { id, name, status, amount, cycle, renew_on: renew || null, cancel_by: deadline || null,
+        ends_on: end || null, payment, platform, notes };
+    }
+    
+    function fromDatabase(row) {
+      const { id, name, status, amount, cycle, renew_on, cancel_by, ends_on, payment, platform, notes, revision } = row;
+      return { id, name, status, amount, cycle, renew: renew_on ?? "", deadline: cancel_by ?? "",
+        end: ends_on ?? "", payment, platform, notes, revision };
+    }
+    
+    function check(result) {
+      if (result.error) throw result.error;
+      return result.data;
+    }
+    
+    function resetFilters() {
+      for (const id of ["search", "status-filter", "date-filter"]) $("#" + id).value = "";
+    }
+    
+    function updateControls() {
+      for (const id of ["add", "backup", "restore"]) $("#" + id).disabled = busy || !ready;
+      for (const id of ["save", "remove", "close"]) $("#" + id).disabled = busy;
+      $("#refresh").disabled = busy || loading;
+    }
+    
+    function editorMessage(message) {
+      const element = $("#editor-message");
+      element.textContent = message;
+      element.hidden = !message;
+    }
+    
+    function openEditor(record = null) {
+      if (!ready || busy) return;
+      draft = record;
+      newId = record ? null : crypto.randomUUID();
+      form.reset();
+      editorMessage("");
+      $("#editor-title").textContent = record ? "契約を編集" : "契約を追加";
+      $("#remove").hidden = !record;
+      if (record) {
+        for (const [key, value] of Object.entries(record)) {
+          const field = form.elements.namedItem(key);
+          if (field) field.value = value ?? "";
+        }
+      }
+      editor.showModal();
+      form.elements.namedItem("name").focus();
+    }
+    
+    async function readRows(owner) {
+      const rows = [];
+      // Continue until an empty page so a server row limit cannot truncate the list.
+      for (let offset = 0; ; ) {
+        const page = check(await client.from(table).select(columns).eq("owner_id", owner)
+          .order("id").range(offset, offset + 199));
+        if (!page.length) return rows;
+        rows.push(...page.map(fromDatabase));
+        offset += page.length;
+      }
+    }
+    
+    async function refresh({ announce = false, internal = false } = {}) {
+      if (!account || (!internal && busy)) return;
+      const owner = account.id;
+      const request = ++loadEpoch;
+      loading = true;
+      $("#storage-label").textContent = "Supabaseから読み込み中";
+      updateControls();
+      try {
+        const fresh = await readRows(owner);
+        if (request !== loadEpoch) return;
+        records = fresh;
+        ready = true;
+        render();
+        $("#storage-label").textContent = "Supabaseと同期済み";
+        if (announce) notify("最新の一覧に更新しました。");
+      } catch (error) {
+        if (request !== loadEpoch) return;
+        $("#storage-label").textContent = "同期できませんでした";
+        const tableMissing = ["PGRST205", "42P01"].includes(error?.code);
+        notify(tableMissing ? "契約テーブルが見つかりません。ポータルと同じSupabaseプロジェクトで supabase-setup.sql を実行してから、「最新に更新」を押してください。"
+          : "一覧を取得できませんでした。接続とSupabaseの設定を確認し、「最新に更新」を押してください。", true);
+      } finally {
+        if (request === loadEpoch) {
+          loading = false;
+          updateControls();
+        }
+      }
+    }
+    
+    function applySession(session) {
+      const user = session?.user ?? null;
+      if (account !== undefined && account?.id === user?.id) return;
+      account = user;
+      accountEpoch += 1;
+      loadEpoch += 1;
+      records = [];
+      busy = false;
+      ready = false;
+      loading = false;
+      draft = null;
+      if (editor.open) editor.close();
+      $("#auth-screen").hidden = Boolean(user);
+      $("#auth-description").textContent = "マイポータルでログインしてから、アプリを開いてください。";
+      $("#dashboard").hidden = !user;
+      $("#account-actions").hidden = !user;
+      $("#session-label").textContent = user?.email ?? "";
+      resetFilters();
+      render();
+      notify("");
+      updateControls();
+      if (user) {
+        const epoch = accountEpoch;
+        setTimeout(() => {
+          if (epoch === accountEpoch) void refresh();
+        }, 0);
+      }
+    }
+    
+    function conflict() {
+      return new Error("別の画面でこの契約が変更または削除されました。入力内容を確認し、いったん閉じて最新版を開き直してください。");
+    }
+    
+    async function write(work, message, inEditor = false) {
+      if (!account || !ready || busy) return;
+      const owner = account.id;
+      const epoch = accountEpoch;
+      loadEpoch += 1;
+      loading = false;
+      busy = true;
+      updateControls();
+      if (inEditor) editorMessage("");
+      try {
+        const result = await work(owner);
+        if (epoch !== accountEpoch) return;
+        if (inEditor) editor.close();
+        notify(message(result));
+        await refresh({ internal: true });
+      } catch (error) {
+        if (epoch !== accountEpoch) return;
+        const text = error instanceof Error && error.message.startsWith("別の画面")
+          ? error.message
+          : "変更を確認できませんでした。「最新に更新」で反映状況を確認してから再試行してください。";
+        if (inEditor) editorMessage(text);
+        else notify(text, true);
+        await refresh({ internal: true });
+      } finally {
+        if (epoch === accountEpoch) {
+          busy = false;
+          updateControls();
+        }
+      }
+    }
+    
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (busy) return;
+      const data = Object.fromEntries(new FormData(form));
+      data.id = draft?.id ?? newId;
+      data.amount = data.amount === "" ? null : Number(data.amount);
+      let values;
+      try {
+        values = toDatabase(validateBackup({ version: 1, records: [data] })[0]);
+      } catch (error) {
+        editorMessage(error.message);
+        return;
+      }
+      const previous = draft;
+      void write(async (owner) => {
+        if (!previous) {
+          check(await client.from(table).insert(values));
+          resetFilters();
+          return;
+        }
+        const { id, ...changes } = values;
+        const result = check(await client.from(table).update(changes).eq("owner_id", owner)
+          .eq("id", id).eq("revision", previous.revision).select("id"));
+        if (!result.length) throw conflict();
+      }, () => values.name + "を保存しました。", true);
+    });
+    
+    $("#remove").addEventListener("click", () => {
+      const previous = draft;
+      if (busy || !previous || !confirm(`「${previous.name}」を削除しますか？`)) return;
+      void write(async (owner) => {
+        const result = check(await client.from(table).delete().eq("owner_id", owner)
+          .eq("id", previous.id).eq("revision", previous.revision).select("id"));
+        if (!result.length) throw conflict();
+      }, () => previous.name + "を削除しました。", true);
+    });
+    
+    $("#backup").addEventListener("click", () => {
+      const portable = records.map(({ revision, ...record }) => record);
+      const blob = new Blob([JSON.stringify({ version: 1, records: portable }, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `subscriptions-${dateString()}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    });
+    
+    $("#backup-file").addEventListener("change", async (event) => {
+      const [file] = event.target.files;
+      event.target.value = "";
+      if (!file || !ready || busy) return;
+      const epoch = accountEpoch;
+      let incoming;
+      try {
+        incoming = validateBackup(JSON.parse(await file.text()));
+      } catch {
+        if (epoch === accountEpoch) notify("バックアップの形式を確認してください。", true);
+        return;
+      }
+      if (epoch !== accountEpoch || busy || !ready || !confirm(`バックアップの${incoming.length}件を確認し、未登録の契約を追加しますか？`)) return;
+      void write(async (owner) => {
+        const current = await readRows(owner);
+        const ids = new Set(current.map((record) => record.id));
+        const additions = incoming.filter((record) => !ids.has(record.id)).map(toDatabase);
+        if (additions.length) check(await client.from(table).insert(additions));
+        resetFilters();
+        return additions.length;
+      }, (count) => `${count}件を追加しました。同じIDの既存契約は${incoming.length - count}件です。`);
+    });
+    
+    for (const status of statuses.keys()) {
+      option(form.elements.namedItem("status"), status, status);
+      option($("#status-filter"), status, status);
+    }
+    $("#add").addEventListener("click", () => openEditor());
+    $("#close").addEventListener("click", () => editor.close());
+    editor.addEventListener("cancel", (event) => { if (busy) event.preventDefault(); });
+    $("#restore").addEventListener("click", () => $("#backup-file").click());
+    $("#refresh").addEventListener("click", () => { void refresh({ announce: true }); });
+    $("#search").addEventListener("input", renderRows);
+    for (const id of ["status-filter", "date-filter", "sort"]) $("#" + id).addEventListener("change", renderRows);
+    window.addEventListener("focus", () => { if (account && !loading && !editor.open) void refresh(); });
+    
+    function initialize() {
+      const config = window.PORTAL_CONNECTION;
+      if (!config?.url || !config?.publishableKey || !window.supabase?.createClient) {
+        $("#auth-description").textContent = "ポータルの接続設定を読み込めませんでした。";
+        return;
+      }
+      try {
+        client = window.supabase.createClient(config.url, config.publishableKey, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+        });
+        client.auth.onAuthStateChange((event, session) => {
+          if (["INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT", "TOKEN_REFRESHED", "USER_UPDATED"].includes(event)) {
+            applySession(session);
+          }
+        });
+      } catch {
+        $("#auth-description").textContent = "ポータルのSupabase接続設定を確認してください。";
+      }
+    }
+    
+    initialize();
+  </script>
+</body>
+</html>
