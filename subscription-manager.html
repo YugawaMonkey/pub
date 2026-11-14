@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
   <title>サブスクリプション管理</title>
   <style>
     :root {
@@ -78,12 +78,18 @@
     .tone-license { background: #dff0f8; color: #285a73; }
     .date, .money { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .missing { color: var(--muted); }
+    .mobile-label { display: none; }
     .table-foot { border-top: 1px solid var(--line); padding: 8px 13px; color: var(--muted); font-size: 12px; }
     #notice { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; background: #e8f4ec; color: #22533c; }
     #notice.warn { background: #fff0db; color: #6f441d; }
     dialog { width: min(620px, calc(100% - 24px)); max-height: calc(100% - 24px); padding: 0; border: 1px solid var(--line); border-radius: 17px; color: var(--ink); box-shadow: 0 24px 75px #17142f38; }
     dialog::backdrop { background: #17142f75; }
-    form { padding: 22px; }
+    dialog { overflow: hidden; }
+    #form { display: flex; flex-direction: column; max-height: calc(100vh - 26px); max-height: calc(100dvh - 26px); }
+    .editor-main { min-height: 0; overflow-y: auto; scroll-padding-block: 12px; overscroll-behavior-y: contain; padding: 22px 22px 0; }
+    #editor-title:focus { outline: none; }
+    #form .form-actions { flex: none; padding: 12px 22px; border-top: 1px solid var(--line); background: var(--paper); }
+    #form label, #form label > :is(input, select, textarea) { min-width: 0; max-width: 100%; }
     .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; margin: 15px 0; }
     label { display: grid; gap: 3px; align-content: start; font-weight: 700; font-size: 13px; }
     .wide { grid-column: 1 / -1; }
@@ -99,6 +105,30 @@
       .queue { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric { padding: 12px; }
       .metric strong { font-size: 22px; }
+    }
+    @media (max-width: 960px) {
+      .table-scroll { position: relative; overflow: visible; }
+      .table-scroll table, .table-scroll tbody { display: block; min-width: 0; }
+      .table-scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+      .table-scroll tbody { display: grid; gap: 10px; padding: 10px; }
+      .table-scroll tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; padding: 12px; border: 1px solid var(--line); border-radius: 11px; }
+      .table-scroll thead tr { display: table-row; }
+      .table-scroll td, .table-scroll td:first-child { min-width: 0; max-width: none; padding: 0; border: 0; white-space: normal; overflow-wrap: anywhere; }
+      .table-scroll .service-cell, .table-scroll .empty-cell { grid-column: 1 / -1; }
+      .table-scroll .service { display: block; min-height: 44px; font-size: 16px; overflow-wrap: anywhere; max-width: 100%; }
+      .table-scroll .mobile-label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+      .table-scroll .pill { white-space: normal; }
+    }
+    @media (max-width: 760px) {
+      .toolbar input[type="search"] { grid-column: 1 / -1; }
+      .toolbar select, .toolbar input { min-height: 44px; font-size: 16px; }
+      dialog { position: fixed; inset: auto 0 var(--editor-bottom, 0px); margin: 0; width: 100%; max-width: none; max-height: 100%; border-radius: 18px 18px 0 0; }
+      #form { max-height: calc(100vh - 12px); max-height: calc(var(--editor-height, 100dvh) - 12px); }
+      .editor-main { padding: 18px 16px 0; }
+      #form .fields { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+      #form input, #form select, #form textarea { display: block; min-height: 44px; font-size: 16px; }
+      #form .form-actions { flex-wrap: nowrap; gap: 6px; padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+      #form .btn { min-height: 44px; padding-inline: 12px; }
     }
     @media (max-width: 450px) {
       .top .actions { width: 100%; }
@@ -174,9 +204,9 @@
           </select>
         </div>
         <div class="table-scroll" tabindex="0" aria-label="契約一覧表">
-          <table>
-            <thead><tr><th scope="col">サービス</th><th scope="col">契約状況</th><th scope="col">料金・周期</th><th scope="col">次回更新日</th><th scope="col">解約期限</th><th scope="col">利用終了日</th><th scope="col">支払いタグ</th></tr></thead>
-            <tbody id="rows"></tbody>
+          <table role="table">
+            <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">サービス</th><th role="columnheader" scope="col">契約状況</th><th role="columnheader" scope="col">料金・周期</th><th role="columnheader" scope="col">次回更新日</th><th role="columnheader" scope="col">解約期限</th><th role="columnheader" scope="col">利用終了日</th><th role="columnheader" scope="col">支払いタグ</th></tr></thead>
+            <tbody id="rows" role="rowgroup"></tbody>
           </table>
         </div>
         <p class="table-foot" id="count" aria-live="polite"></p>
@@ -186,7 +216,8 @@
   </main>
   <dialog id="editor" aria-labelledby="editor-title">
     <form id="form">
-      <h2 id="editor-title"></h2>
+      <div class="editor-main">
+      <h2 id="editor-title" tabindex="-1" autofocus></h2>
       <p id="editor-message" role="status" hidden></p>
       <div class="fields">
         <label class="wide">サービス名 <input name="name" required maxlength="120"></label>
@@ -199,6 +230,7 @@
         <label>利用終了日 <input name="end" type="date" min="1900-01-01" max="9999-12-31"></label>
         <label>支払いタグ <input name="payment" maxlength="120" placeholder="例：Visa、MasterCard"></label>
         <label class="wide">メモ <textarea name="notes" rows="3" maxlength="3000"></textarea></label>
+      </div>
       </div>
       <div class="form-actions">
         <button class="btn danger" type="button" id="remove">削除</button><span class="spacer"></span>
@@ -327,6 +359,15 @@
       }
     }
     
+    function listCell(label, value, className) {
+      const cell = node("td", undefined, className);
+      cell.setAttribute("role", "cell");
+      const heading = node("span", label, "mobile-label");
+      heading.setAttribute("aria-hidden", "true");
+      cell.append(heading, value);
+      return cell;
+    }
+
     function renderRows() {
       const query = $("#search").value.trim().normalize("NFKC").toLocaleLowerCase("ja");
       const status = $("#status-filter").value;
@@ -347,30 +388,33 @@
       const tbody = $("#rows");
       tbody.replaceChildren();
       if (!visible.length) {
-        const cell = node("td", "条件に一致する契約はありません。", "missing");
+        const cell = node("td", "条件に一致する契約はありません。", "missing empty-cell");
         cell.colSpan = 7;
+        cell.setAttribute("role", "cell");
         const row = node("tr");
+        row.setAttribute("role", "row");
         row.append(cell);
         tbody.append(row);
       }
       for (const record of visible) {
         const row = node("tr");
-        const service = node("td");
+        row.setAttribute("role", "row");
+        const service = node("td", undefined, "service-cell");
+        service.setAttribute("role", "cell");
         const edit = node("button", record.name, "service");
         edit.type = "button";
         edit.setAttribute("aria-label", record.name + "を編集");
         edit.addEventListener("click", () => openEditor(record));
         service.append(edit);
         if (record.platform) service.append(node("span", record.platform, "service-meta"));
-        const statusCell = node("td");
-        statusCell.append(node("span", record.status, "pill tone-" + statuses.get(record.status)));
+        const statusCell = listCell("契約状況", node("span", record.status, "pill tone-" + statuses.get(record.status)));
         const cycle = record.cycle === "once" ? "（買い切り）" : record.cycle ? " / " + cycles.get(record.cycle) : "";
         const price = record.amount === null ? (record.notes.includes("無料トライアル") ? "無料トライアル" : "—") : yen.format(record.amount) + cycle;
-        row.append(service, statusCell, node("td", price, record.amount === null ? "missing" : "money"));
-        for (const key of ["renew", "deadline", "end"]) {
-          row.append(node("td", record[key] ? record[key].replaceAll("-", "/") : "—", record[key] ? "date" : "missing"));
+        row.append(service, statusCell, listCell("料金・周期", price, record.amount === null ? "missing" : "money"));
+        for (const [key, label] of [["renew", "次回更新日"], ["deadline", "解約期限"], ["end", "利用終了日"]]) {
+          row.append(listCell(label, record[key] ? record[key].replaceAll("-", "/") : "—", record[key] ? "date" : "missing"));
         }
-        row.append(node("td", record.payment.replaceAll(",", "、") || "—"));
+        row.append(listCell("支払いタグ", record.payment.replaceAll(",", "、") || "—"));
         tbody.append(row);
       }
       $("#count").textContent = `${visible.length} / ${records.length} 件表示`;
@@ -442,6 +486,23 @@
       element.hidden = !message;
     }
     
+    const compactEditor = window.matchMedia("(max-width: 760px)");
+    const visualViewport = window.visualViewport;
+
+    function fitEditorToViewport() {
+      if (!editor.open || !compactEditor.matches || !visualViewport || visualViewport.scale !== 1) {
+        editor.style.removeProperty("--editor-height");
+        editor.style.removeProperty("--editor-bottom");
+        return;
+      }
+      const bottom = Math.max(0, document.documentElement.clientHeight - visualViewport.height - visualViewport.offsetTop);
+      editor.style.setProperty("--editor-height", visualViewport.height + "px");
+      editor.style.setProperty("--editor-bottom", bottom + "px");
+    }
+
+    visualViewport?.addEventListener("resize", fitEditorToViewport);
+    visualViewport?.addEventListener("scroll", fitEditorToViewport);
+
     function openEditor(record = null) {
       if (!ready || busy) return;
       draft = record;
@@ -457,7 +518,9 @@
         }
       }
       editor.showModal();
-      form.elements.namedItem("name").focus();
+      $(".editor-main").scrollTop = 0;
+      fitEditorToViewport();
+      if (!compactEditor.matches) form.elements.namedItem("name").focus();
     }
     
     async function readRows(owner) {
