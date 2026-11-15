@@ -73,6 +73,7 @@
     .metrics, .charts { display: grid; gap: 14px; margin-top: 16px; }
     .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sale-chart { grid-column: 1 / -1; }
     .metric, .chart { margin: 0; padding: 18px 20px; min-width: 0; }
     .metric h3 { font-size: .91rem; margin: 0 0 5px; color: var(--muted); }
     .metric strong { font-size: clamp(23px, 3.15vw, 35px); line-height: 1.2; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
@@ -83,6 +84,22 @@
     .bar-track { display: block; height: 9px; border-radius: 6px; background: #f0eef7; margin-top: 4px; overflow: hidden; }
     .bar-fill { display: block; height: 100%; background: #5469d4; border-radius: inherit; }
     .bar-fill.sale { background: #218167; }
+    .pie-layout { display: flex; flex-wrap: wrap; gap: 16px 22px; align-items: center; margin-top: 12px; }
+    .pie { flex: none; width: min(152px, 100%); aspect-ratio: 1; border-radius: 50%; margin: 0 auto; }
+    .chart-key { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: .88rem; }
+    .pie-layout .chart-key { flex: 1 1 190px; }
+    .chart-key li { display: flex; align-items: baseline; gap: 7px; overflow-wrap: anywhere; }
+    .chart-key strong { margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .swatch { display: inline-block; flex: none; width: 11px; height: 11px; border-radius: 3px; background: var(--series-color); }
+    .held-series { --series-color: #4662d2; }
+    .disposed-series { --series-color: #c2671f; }
+    .annual-chart { margin-top: 14px; }
+    .annual-key { display: flex; gap: 8px 16px; flex-wrap: wrap; margin-top: 9px; }
+    .annual-row { display: grid; grid-template-columns: 6em minmax(0, 1fr); align-items: start; gap: 10px; }
+    .annual-track { height: 14px; margin-top: 3px; position: relative; overflow: hidden; border-radius: 4px; background: #f0eef7; }
+    .annual-segment { display: block; position: absolute; top: 0; bottom: 0; background: var(--series-color); }
+    .annual-zero { position: absolute; top: 0; bottom: 0; width: 1px; background: #6f6983; }
+    .annual-values { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 4px; color: var(--muted); font-size: .85rem; }
     .timeline-panel { padding: 18px 20px 22px; }
     .timeline-group { position: relative; margin-top: 18px; }
     .timeline-group h3 { position: relative; z-index: 1; width: fit-content; margin: 0 auto 12px; padding: 3px 11px; border-radius: 18px; background: #ecebfa; color: #352e71; font-size: .9rem; }
@@ -148,6 +165,8 @@
       .panel-top { padding: 14px; }
       .message { padding-inline: 14px; }
       .metrics, .charts { grid-template-columns: 1fr; gap: 9px; }
+      .tab { flex: 1; min-width: 0; padding-inline: 8px; }
+      .annual-row { grid-template-columns: 5em minmax(0, 1fr); gap: 8px; }
       .timeline-panel { padding: 14px; }
       .timeline-group h3 { margin-inline: 0; }
       .timeline-list::before { left: 5px; }
@@ -184,6 +203,7 @@
       <div class="tabs" role="tablist" aria-label="固定資産の表示">
         <button class="tab" id="list-tab" type="button" role="tab" aria-selected="true" aria-controls="list-view">一覧</button>
         <button class="tab" id="summary-tab" type="button" role="tab" aria-selected="false" aria-controls="summary-view" tabindex="-1">集計</button>
+        <button class="tab" id="timeline-tab" type="button" role="tab" aria-selected="false" aria-controls="timeline-view" tabindex="-1">タイムライン</button>
       </div>
       <section class="panel" id="list-view" role="tabpanel" aria-labelledby="list-tab" tabindex="0">
         <div class="panel-top">
@@ -224,13 +244,34 @@
               <ul id="category-bars" class="bars"></ul>
               <p id="category-note" class="muted"></p>
             </section>
-            <section class="panel chart" aria-labelledby="sale-title">
+            <section class="panel chart" aria-labelledby="category-count-title">
+              <h2 id="category-count-title">種別ごとの保有資産件数</h2>
+              <div class="pie-layout" id="category-count-chart" hidden>
+                <div class="pie" id="category-pie" aria-hidden="true"></div>
+                <ul class="chart-key" id="category-count-key" aria-label="種別ごとの件数と割合"></ul>
+              </div>
+              <p id="category-count-note" class="muted"></p>
+            </section>
+            <section class="panel chart sale-chart" aria-labelledby="sale-title">
               <h2 id="sale-title">売却資産の購入額と売却額</h2>
               <ul id="sale-bars" class="bars"></ul>
               <p id="sale-comparison-note" class="muted"></p>
             </section>
           </div>
+          <section class="panel chart annual-chart" aria-labelledby="annual-title">
+            <h2 id="annual-title">取得年ごとの購入額</h2>
+            <p class="muted">購入日と購入価格で集計 · 1月から12月まで</p>
+            <ul class="chart-key annual-key" aria-label="色の凡例">
+              <li><span class="swatch held-series" aria-hidden="true"></span>保有</li>
+              <li><span class="swatch disposed-series" aria-hidden="true"></span>処分済</li>
+            </ul>
+            <ul class="bars" id="annual-bars"></ul>
+            <p class="muted" id="annual-note"></p>
+          </section>
         </section>
+      </div>
+      <div id="timeline-view" role="tabpanel" aria-labelledby="timeline-tab" tabindex="0" hidden>
+        <p id="timeline-empty" class="panel empty">「データ読み込み」でAirtableの一覧を取得できます。</p>
         <section id="timeline-panel" class="panel timeline-panel" aria-labelledby="timeline-title" hidden>
           <h2 id="timeline-title">購入タイムライン</h2>
           <div id="timeline"></div>
@@ -257,12 +298,15 @@
     const assetColumns = Array.from($("asset-columns").cells, (header) => header.textContent);
     const preview = new URLSearchParams(location.search).get("preview") === "1";
     const yen = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" });
+    const percentage = new Intl.NumberFormat("ja-JP", { style: "percent", maximumFractionDigits: 1 });
+    const categoryColors = ["#4662d2", "#22826b", "#c2671f", "#8752b5", "#b4456f", "#257caa", "#797037", "#5b6c8c", "#ab4751"];
     const dateTime = new Intl.DateTimeFormat("ja-JP", { dateStyle: "medium", timeStyle: "short" });
     const examples = [
       { name: "ノートパソコン（見本）", category: "パソコン・ノートパソコン", status: "使用中", purchasedOn: "2025-04-12", purchasePrice: 148000, notes: "自宅用" },
       { name: "ワイヤレスキーボード（見本）", category: "PC周辺機器", status: "使用中", purchasedOn: "2025-03-08", purchasePrice: 12500 },
       { name: "ミラーレスカメラ（見本）", category: "カメラ・レンズ", status: "保管中", purchasedOn: "2024-09-03", purchasePrice: 89000 },
       { name: "旧モニター（見本）", category: "PC周辺機器", status: "処分済", purchasedOn: "2021-06-18", purchasePrice: 27500, disposalMethod: "売却", disposedOn: "2025-10-20", salePrice: 8000 },
+      { name: "旧スマートフォン（見本）", category: "スマホ・タブレット", status: "処分済", purchasedOn: "2024-07-20", purchasePrice: 54000, disposalMethod: "売却", disposedOn: "2026-04-17", salePrice: 12500 },
     ];
     let client;
     let owner = null;
@@ -387,6 +431,93 @@
       }));
     }
 
+    function renderCategoryPie(assets) {
+      const counts = new Map();
+      for (const asset of assets) {
+        const category = asset.category || "種別未登録";
+        counts.set(category, (counts.get(category) ?? 0) + 1);
+      }
+      const categories = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ja"));
+      const stops = [];
+      let cumulative = 0;
+      $("category-count-key").replaceChildren(...categories.map(([category, count], index) => {
+        const color = categoryColors[index % categoryColors.length];
+        const start = cumulative / assets.length * 100;
+        cumulative += count;
+        stops.push(color + " " + start + "% " + cumulative / assets.length * 100 + "%");
+        const swatch = element("span", null, "swatch");
+        swatch.style.setProperty("--series-color", color);
+        swatch.setAttribute("aria-hidden", "true");
+        const label = element("li");
+        label.append(swatch, element("span", category), element("strong", count + "件 · " + percentage.format(count / assets.length)));
+        return label;
+      }));
+      $("category-pie").style.background = stops.length ? "conic-gradient(" + stops.join(", ") + ")" : "";
+      $("category-count-chart").hidden = !categories.length;
+      $("category-count-note").textContent = categories.length ? "保有資産 " + assets.length + "件" : "保有資産はありません。";
+    }
+
+    function renderAnnualChart(held, disposed) {
+      const annualTotals = new Map();
+      const series = [
+        { assets: held, label: "保有", className: "held-series" },
+        { assets: disposed, label: "処分済", className: "disposed-series" },
+      ];
+      let missingDate = 0;
+      let missingPrice = 0;
+      for (const [index, { assets }] of series.entries()) {
+        for (const asset of assets) {
+          const date = /^(\d{4})-(0[1-9]|1[0-2])-\d{2}$/.exec(asset.purchasedOn || "");
+          const hasPrice = Number.isFinite(asset.purchasePrice);
+          if (!date) missingDate++;
+          if (!hasPrice) missingPrice++;
+          if (!date || !hasPrice) continue;
+          const year = Number(date[1]);
+          if (!annualTotals.has(year)) annualTotals.set(year, [0, 0]);
+          annualTotals.get(year)[index] += asset.purchasePrice;
+        }
+      }
+
+      const years = [...annualTotals].sort((a, b) => b[0] - a[0]);
+      // All years share one scale. Negative corrections extend to the left of zero.
+      const positive = Math.max(0, ...years.map(([, values]) => values.reduce((sum, value) => sum + Math.max(0, value), 0)));
+      const negative = Math.min(0, ...years.map(([, values]) => values.reduce((sum, value) => sum + Math.min(0, value), 0)));
+      const span = positive - negative || 1;
+      const position = (value) => (value - negative) / span * 100 + "%";
+      $("annual-bars").replaceChildren(...years.map(([year, amounts]) => {
+        const row = element("li", null, "annual-row");
+        const body = element("div");
+        const bar = element("div", null, "annual-track");
+        bar.setAttribute("aria-hidden", "true");
+        const labels = element("div", null, "annual-values");
+        let left = 0;
+        let right = 0;
+        for (const [index, amount] of amounts.entries()) {
+          const { label, className } = series[index];
+          const segment = element("span", null, "annual-segment " + className);
+          if (amount < 0) left += amount;
+          segment.style.left = position(amount < 0 ? left : right);
+          segment.style.width = Math.abs(amount) / span * 100 + "%";
+          if (amount > 0) right += amount;
+          bar.append(segment);
+          labels.append(element("span", label + " " + yen.format(amount)));
+        }
+        if (negative < 0 && positive > 0) {
+          const zero = element("span", null, "annual-zero");
+          zero.style.left = position(0);
+          bar.append(zero);
+        }
+        body.append(bar, labels);
+        row.append(element("strong", year + "年"), body);
+        return row;
+      }));
+      const notes = [];
+      if (!years.length) notes.push("購入日と購入価格が登録された資産はありません。");
+      if (missingDate) notes.push("購入日未登録 " + missingDate + "件");
+      if (missingPrice) notes.push("購入価格未入力 " + missingPrice + "件");
+      $("annual-note").textContent = notes.join(" · ");
+    }
+
     function renderOverview(assets) {
       $("overview").hidden = !assets.length;
       const held = assets.filter((asset) => asset.status === "使用中" || asset.status === "保管中");
@@ -406,6 +537,8 @@
       const categoryBars = [...categories].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
       drawBars("category-bars", categoryBars);
       $("category-note").textContent = categoryBars.length ? "" : "購入価格が登録された保有資産はありません。";
+      renderCategoryPie(held);
+      renderAnnualChart(held, disposed);
 
       const purchased = total(comparable, "purchasePrice");
       const sales = total(comparable, "salePrice");
@@ -415,7 +548,7 @@
       const excluded = sold.length - comparable.length;
       const note = comparable.length
         ? comparable.length + "件 · 差額（売却 − 購入） " + yen.format(sales - purchased)
-          + (purchased > 0 ? " · 回収率 " + new Intl.NumberFormat("ja-JP", { style: "percent", maximumFractionDigits: 1 }).format(sales / purchased) : "")
+          + (purchased > 0 ? " · 回収率 " + percentage.format(sales / purchased) : "")
         : "購入価格と売却価格の両方が登録された資産はありません。";
       $("sale-comparison-note").textContent = note + (excluded ? "（価格未入力で比較対象外 " + excluded + "件）" : "");
     }
@@ -524,7 +657,7 @@
       $("table").hidden = visible.length === 0;
       const emptyText = assets.length ? "条件に一致する資産がありません。" : snapshot
         ? "固定資産一覧にデータがありません。" : "「データ読み込み」でAirtableの一覧を取得できます。";
-      for (const id of ["empty", "summary-empty"]) {
+      for (const id of ["empty", "summary-empty", "timeline-empty"]) {
         $(id).hidden = visible.length !== 0;
         $(id).textContent = emptyText;
       }
@@ -612,7 +745,7 @@
       }
     }
 
-    const tabs = [$("list-tab"), $("summary-tab")];
+    const tabs = [$("list-tab"), $("summary-tab"), $("timeline-tab")];
     function selectTab(selected, moveFocus = false) {
       for (const tab of tabs) {
         const active = tab === selected;
@@ -627,10 +760,10 @@
       tab.addEventListener("keydown", (event) => {
         let target;
         switch (event.key) {
-          case "ArrowLeft":
-          case "ArrowRight": target = tabs[1 - index]; break;
+          case "ArrowLeft": target = tabs[(index + tabs.length - 1) % tabs.length]; break;
+          case "ArrowRight": target = tabs[(index + 1) % tabs.length]; break;
           case "Home": target = tabs[0]; break;
-          case "End": target = tabs[1]; break;
+          case "End": target = tabs[tabs.length - 1]; break;
           default: return;
         }
         event.preventDefault();
