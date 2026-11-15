@@ -61,7 +61,52 @@
     .tag { display: inline-block; padding: 2px 7px; border-radius: 6px; color: #434064; background: #edebf6; white-space: nowrap; }
     .tag[data-status="使用中"] { color: #145b3c; background: #e5f4eb; }
     .tag[data-status="保管中"] { color: #775010; background: #fff1d0; }
-    .attachment { display: block; max-width: 150px; color: #2947be; overflow-wrap: anywhere; }
+    .controls { padding: 16px 20px; }
+    .controls .filters { justify-content: flex-start; }
+    .controls input { width: min(280px, 100%); }
+    .controls .message { padding: 10px 0 0; }
+    .metrics, .charts { display: grid; gap: 14px; margin-top: 16px; }
+    .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .metric, .chart { margin: 0; padding: 18px 20px; min-width: 0; }
+    .metric h3 { font-size: .91rem; margin: 0 0 5px; color: var(--muted); }
+    .metric strong { font-size: clamp(23px, 3.15vw, 35px); line-height: 1.2; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+    .metric p, .chart p { margin-top: 6px; font-size: .87rem; }
+    .bars { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 9px; }
+    .bar-label { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2px 10px; font-size: .9rem; }
+    .bar-label strong { font-variant-numeric: tabular-nums; }
+    .bar-track { display: block; height: 9px; border-radius: 6px; background: #f0eef7; margin-top: 4px; overflow: hidden; }
+    .bar-fill { display: block; height: 100%; background: #5469d4; border-radius: inherit; }
+    .bar-fill.sale { background: #218167; }
+    .timeline-panel { padding: 18px 20px 22px; }
+    .timeline-group { position: relative; margin-top: 18px; }
+    .timeline-group h3 { position: relative; z-index: 1; width: fit-content; margin: 0 auto 12px; padding: 3px 11px; border-radius: 18px; background: #ecebfa; color: #352e71; font-size: .9rem; }
+    .timeline-list { list-style: none; padding: 0; margin: 0; position: relative; }
+    .timeline-list::before { content: ""; position: absolute; left: calc(50% - 1px); top: 0; bottom: 0; width: 2px; background: #c9cbe1; }
+    .timeline-entry { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 38px; padding: 4px 0; }
+    .timeline-entry::before { content: ""; position: absolute; left: calc(50% - 5px); top: 27px; width: 10px; height: 10px; border-radius: 50%; background: #8d52c3; }
+    .timeline-entry:nth-child(even)::before { background: #15856f; }
+    .timeline-entry:nth-child(even) .asset-card { grid-column: 2; }
+    .asset-card { margin: 0; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: #faf9fd; min-width: 0; }
+    .asset-card-head { display: flex; align-items: center; gap: 11px; }
+    .asset-card time, .asset-date { display: block; font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .asset-name { display: block; font: inherit; font-weight: 750; padding: 0; border: 0; text-align: left; color: #263eaa; background: transparent; cursor: pointer; overflow-wrap: anywhere; }
+    .asset-name:hover { text-decoration: underline; }
+    .asset-details { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: .87rem; color: var(--muted); }
+    .asset-details dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 10px; margin: 0; }
+    .asset-details dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; white-space: pre-wrap; }
+    .thumb { flex: none; position: relative; display: inline-grid; place-items: center; width: 66px; height: 54px; padding: 0; border: 1px solid #dbd7ea; border-radius: 7px; overflow: hidden; background: #eeedf7; color: #55516d; font: inherit; font-size: .66rem; }
+    button.thumb { cursor: zoom-in; }
+    .thumb img { width: 100%; height: 100%; object-fit: contain; }
+    .thumb .more { position: absolute; bottom: 2px; right: 2px; padding: 0 3px; border-radius: 4px; background: #242039; color: white; }
+    .gallery { width: min(680px, calc(100% - 28px)); max-height: 90vh; border: 1px solid var(--line); border-radius: 16px; padding: 18px; color: var(--ink); }
+    .gallery::backdrop { background: #15112ab0; }
+    .gallery-head, .gallery-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .gallery-head h2 { overflow-wrap: anywhere; }
+    .gallery-image { display: block; margin: 14px auto; width: 100%; height: min(58vh, 480px); object-fit: contain; background: #f3f1f8; border-radius: 8px; }
+    .gallery-status { margin: 12px 0; color: var(--muted); overflow-wrap: anywhere; }
+    .gallery-original { display: inline-block; margin-bottom: 10px; color: #263eaa; }
+    .gallery-actions .btn:disabled { cursor: default; }
     .empty { padding: 25px 20px; color: var(--muted); }
     @media (max-width: 640px) {
       .wrap { width: calc(100% - 24px); }
@@ -69,6 +114,12 @@
       .hero { align-items: start; flex-direction: column; padding: 22px; }
       .panel-top { padding: 14px; }
       .message { padding-inline: 14px; }
+      .metrics, .charts { grid-template-columns: 1fr; gap: 9px; }
+      .timeline-panel { padding: 14px; }
+      .timeline-group h3 { margin-inline: 0; }
+      .timeline-list::before { left: 5px; }
+      .timeline-entry { display: block; padding-left: 21px; }
+      .timeline-entry::before { left: 1px; }
     }
   </style>
 </head>
@@ -89,16 +140,41 @@
           <p><time id="synced">未同期</time></p>
         </div>
       </section>
-      <section class="panel" aria-labelledby="table-title">
-        <div class="panel-top">
-          <div><h2 id="table-title">固定資産一覧</h2><p id="count" class="muted">0件</p></div>
-          <div class="filters">
+      <section class="panel controls" aria-label="固定資産の絞り込み">
+        <div class="filters">
             <label>検索<input id="search" type="search" placeholder="名称・詳細" autocomplete="off"></label>
             <label>種別<select id="category"><option value="">すべて</option></select></label>
             <label>使用状況<select id="status"><option value="">すべて</option></select></label>
-          </div>
         </div>
         <p class="message" id="message" role="status" hidden></p>
+      </section>
+      <section id="overview" aria-label="資産の集計" hidden>
+        <div class="metrics">
+          <article class="panel metric"><h3>保有資産の購入総額</h3><strong id="held-total">—</strong><p class="muted" id="held-note"></p></article>
+          <article class="panel metric"><h3>処分済み資産の購入総額</h3><strong id="disposed-total">—</strong><p class="muted" id="disposed-note"></p></article>
+          <article class="panel metric"><h3>売却価格の総額</h3><strong id="sale-total">—</strong><p class="muted" id="sale-note"></p></article>
+        </div>
+        <div class="charts">
+          <section class="panel chart" aria-labelledby="category-title">
+            <h2 id="category-title">種別ごとの保有資産購入額</h2>
+            <ul id="category-bars" class="bars"></ul>
+            <p id="category-note" class="muted"></p>
+          </section>
+          <section class="panel chart" aria-labelledby="sale-title">
+            <h2 id="sale-title">売却資産の購入額と売却額</h2>
+            <ul id="sale-bars" class="bars"></ul>
+            <p id="sale-comparison-note" class="muted"></p>
+          </section>
+        </div>
+      </section>
+      <section id="timeline-panel" class="panel timeline-panel" aria-labelledby="timeline-title" hidden>
+        <h2 id="timeline-title">購入タイムライン</h2>
+        <div id="timeline"></div>
+      </section>
+      <section class="panel" aria-labelledby="table-title">
+        <div class="panel-top">
+          <div><h2 id="table-title">固定資産一覧</h2><p id="count" class="muted">0件</p></div>
+        </div>
         <p class="empty" id="empty">「データ読み込み」でAirtableの一覧を取得できます。</p>
         <div class="table-scroll" id="table" tabindex="0" role="region" aria-labelledby="table-title" hidden>
           <table aria-labelledby="table-title">
@@ -109,6 +185,17 @@
       </section>
     </div>
   </main>
+  <dialog id="gallery" class="gallery" aria-labelledby="gallery-title">
+    <div class="gallery-head"><h2 id="gallery-title">画像プレビュー</h2><form method="dialog"><button type="submit" class="btn" autofocus>閉じる</button></form></div>
+    <img id="gallery-image" class="gallery-image" alt="">
+    <p id="gallery-error" class="gallery-status" role="status" hidden>画像を表示できません。「データ読み込み」で画像リンクを更新してください。</p>
+    <p id="gallery-caption" class="gallery-status" aria-live="polite"></p>
+    <a id="gallery-original" class="gallery-original" target="_blank" rel="noopener noreferrer">元のファイルを開く</a>
+    <div id="gallery-actions" class="gallery-actions">
+      <button id="gallery-prev" type="button" class="btn">前の画像</button>
+      <button id="gallery-next" type="button" class="btn">次の画像</button>
+    </div>
+  </dialog>
   <script src="./config.js"></script>
   <script src="./vendor/supabase.js"></script>
   <script>
@@ -119,6 +206,7 @@
     const dateTime = new Intl.DateTimeFormat("ja-JP", { dateStyle: "medium", timeStyle: "short" });
     const examples = [
       { name: "ノートパソコン（見本）", category: "パソコン・ノートパソコン", status: "使用中", purchasedOn: "2025-04-12", purchasePrice: 148000, notes: "自宅用" },
+      { name: "ワイヤレスキーボード（見本）", category: "PC周辺機器", status: "使用中", purchasedOn: "2025-03-08", purchasePrice: 12500 },
       { name: "ミラーレスカメラ（見本）", category: "カメラ・レンズ", status: "保管中", purchasedOn: "2024-09-03", purchasePrice: 89000 },
       { name: "旧モニター（見本）", category: "PC周辺機器", status: "処分済", purchasedOn: "2021-06-18", purchasePrice: 27500, disposalMethod: "売却", disposedOn: "2025-10-20", salePrice: 8000 },
     ];
@@ -126,6 +214,15 @@
     let owner = null;
     let sessionGeneration = 0;
     let snapshot = null;
+    let galleryImages = [];
+    let galleryIndex = 0;
+
+    function element(tag, text, className) {
+      const node = document.createElement(tag);
+      if (text != null) node.textContent = text;
+      if (className) node.className = className;
+      return node;
+    }
 
     function report(text, error = false) {
       $("message").textContent = text;
@@ -152,21 +249,181 @@
       return element;
     }
 
-    function attachmentLinks(target, images) {
+    function validImages(images) {
+      const result = [];
       for (const image of images ?? []) {
         let url;
-        try { url = new URL(image.url); } catch { continue; }
+        try { url = new URL(image?.url); } catch { continue; }
         const host = url.hostname;
         if (url.protocol !== "https:" || !(host === "dl.airtable.com" || host === "airtableusercontent.com" || host.endsWith(".airtableusercontent.com"))) continue;
-        const link = document.createElement("a");
-        link.className = "attachment";
-        link.href = url.href;
-        link.rel = "noopener noreferrer";
-        link.target = "_blank";
-        link.textContent = image.filename || "画像を開く";
-        if (!target.querySelector("a")) target.replaceChildren();
-        target.append(link);
+        result.push({ url: url.href, filename: image.filename });
       }
+      return result;
+    }
+
+    function showGalleryImage(index) {
+      const image = galleryImages[index];
+      if (!image) return;
+      galleryIndex = index;
+      const photo = $("gallery-image");
+      photo.hidden = false;
+      $("gallery-error").hidden = true;
+      photo.alt = image.filename || "資産の画像";
+      photo.src = image.url;
+      $("gallery-original").href = image.url;
+      $("gallery-caption").textContent = (index + 1) + " / " + galleryImages.length + (image.filename ? " · " + image.filename : "");
+      $("gallery-actions").hidden = galleryImages.length < 2;
+      $("gallery-prev").disabled = index === 0;
+      $("gallery-next").disabled = index === galleryImages.length - 1;
+    }
+
+    function thumbnail(asset) {
+      const images = validImages(asset.images);
+      if (!images.length) return element("span", "画像なし", "thumb");
+      const button = element("button", null, "thumb");
+      button.type = "button";
+      button.setAttribute("aria-label", (asset.name || "資産") + "の画像を拡大");
+      const photo = element("img");
+      photo.alt = "";
+      photo.loading = "lazy";
+      photo.decoding = "async";
+      photo.addEventListener("error", () => photo.replaceWith(element("span", "表示不可")));
+      photo.src = images[0].url;
+      button.append(photo);
+      if (images.length > 1) button.append(element("span", "＋" + (images.length - 1) + "枚", "more"));
+      button.addEventListener("click", () => {
+        galleryImages = images;
+        $("gallery-title").textContent = asset.name || "画像プレビュー";
+        showGalleryImage(0);
+        $("gallery").showModal();
+      });
+      return button;
+    }
+
+    function total(assets, key) {
+      return assets.reduce((sum, asset) => sum + (Number.isFinite(asset[key]) ? asset[key] : 0), 0);
+    }
+
+    function metric(id, assets, key, missingLabel) {
+      const missing = assets.filter((asset) => !Number.isFinite(asset[key])).length;
+      $("" + id + "-total").textContent = assets.length && missing === assets.length ? "—" : yen.format(total(assets, key));
+      $("" + id + "-note").textContent = assets.length + "件" + (missing ? " · " + missingLabel + "未入力 " + missing + "件" : "");
+    }
+
+    function drawBars(id, values) {
+      const max = Math.max(1, ...values.map(({ value }) => Math.abs(value)));
+      $(id).replaceChildren(...values.map(({ label, value, tone }) => {
+        const row = element("li");
+        const legend = element("div", null, "bar-label");
+        legend.append(element("span", label), element("strong", yen.format(value)));
+        const track = element("span", null, "bar-track");
+        track.setAttribute("aria-hidden", "true");
+        const fill = element("span", null, tone ? "bar-fill " + tone : "bar-fill");
+        fill.style.width = Math.abs(value) / max * 100 + "%";
+        track.append(fill);
+        row.append(legend, track);
+        return row;
+      }));
+    }
+
+    function renderOverview(assets) {
+      $("overview").hidden = !assets.length;
+      const held = assets.filter((asset) => asset.status === "使用中" || asset.status === "保管中");
+      const disposed = assets.filter((asset) => asset.status === "処分済");
+      const sold = disposed.filter((asset) => asset.disposalMethod === "売却");
+      const comparable = sold.filter((asset) => Number.isFinite(asset.purchasePrice) && Number.isFinite(asset.salePrice));
+      metric("held", held, "purchasePrice", "購入価格");
+      metric("disposed", disposed, "purchasePrice", "購入価格");
+      metric("sale", sold, "salePrice", "売却価格");
+
+      const categories = new Map();
+      for (const asset of held) {
+        if (!Number.isFinite(asset.purchasePrice)) continue;
+        const group = asset.category || "種別未登録";
+        categories.set(group, (categories.get(group) ?? 0) + asset.purchasePrice);
+      }
+      const categoryBars = [...categories].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+      drawBars("category-bars", categoryBars);
+      $("category-note").textContent = categoryBars.length ? "" : "購入価格が登録された保有資産はありません。";
+
+      const purchased = total(comparable, "purchasePrice");
+      const sales = total(comparable, "salePrice");
+      drawBars("sale-bars", comparable.length ? [
+        { label: "購入価格", value: purchased }, { label: "売却価格", value: sales, tone: "sale" },
+      ] : []);
+      const excluded = sold.length - comparable.length;
+      const note = comparable.length
+        ? comparable.length + "件 · 差額（売却 − 購入） " + yen.format(sales - purchased)
+          + (purchased > 0 ? " · 回収率 " + new Intl.NumberFormat("ja-JP", { style: "percent", maximumFractionDigits: 1 }).format(sales / purchased) : "")
+        : "購入価格と売却価格の両方が登録された資産はありません。";
+      $("sale-comparison-note").textContent = note + (excluded ? "（価格未入力で比較対象外 " + excluded + "件）" : "");
+    }
+
+    function timelineCard(asset, index) {
+      const entry = element("li", null, "timeline-entry");
+      const card = element("article", null, "asset-card");
+      const head = element("div", null, "asset-card-head");
+      const label = element("div");
+      const date = asset.purchasedOn
+        ? element("time", asset.purchasedOn)
+        : element("span", "購入日未登録", "asset-date");
+      if (asset.purchasedOn) date.dateTime = asset.purchasedOn;
+      const name = element("button", asset.name || "名称未登録", "asset-name");
+      name.type = "button";
+      const details = element("div", null, "asset-details");
+      details.id = "asset-details-" + index;
+      name.setAttribute("aria-controls", details.id);
+      const fields = [
+        ["種別", asset.category], ["使用状況", asset.status],
+        ["購入価格", Number.isFinite(asset.purchasePrice) ? yen.format(asset.purchasePrice) : null],
+        ["処分方式", asset.disposalMethod], ["処分日", asset.disposedOn],
+        ["売却価格", Number.isFinite(asset.salePrice) ? yen.format(asset.salePrice) : null],
+        ["詳細", asset.notes],
+      ];
+      const descriptions = element("dl");
+      for (const [key, value] of fields) {
+        if (value) descriptions.append(element("dt", key), element("dd", value));
+      }
+      details.append(descriptions.childElementCount ? descriptions : element("p", "詳細は未登録です。"));
+      let pinned = false;
+      let hovered = false;
+      let focused = false;
+      let dismissed = false;
+      const update = () => {
+        const open = pinned || (!dismissed && (hovered || focused));
+        details.hidden = !open;
+        name.setAttribute("aria-expanded", String(open));
+      };
+      name.addEventListener("mouseenter", () => { hovered = true; dismissed = false; update(); });
+      card.addEventListener("mouseleave", () => { hovered = false; update(); });
+      name.addEventListener("focus", () => { focused = name.matches(":focus-visible"); dismissed = false; update(); });
+      name.addEventListener("blur", () => { focused = false; update(); });
+      name.addEventListener("click", () => { pinned = !pinned; dismissed = !pinned; update(); });
+      name.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") { pinned = false; dismissed = true; update(); }
+      });
+      update();
+      label.append(date, name);
+      head.append(thumbnail(asset), label);
+      card.append(head, details);
+      entry.append(card);
+      return entry;
+    }
+
+    function renderTimeline(assets) {
+      $("timeline-panel").hidden = !assets.length;
+      const sorted = [...assets].sort((a, b) => (b.purchasedOn || "").localeCompare(a.purchasedOn || "", "ja"));
+      const groups = new Map();
+      sorted.forEach((asset, index) => {
+        const year = asset.purchasedOn?.slice(0, 4) || "";
+        if (!groups.has(year)) groups.set(year, element("ol", null, "timeline-list"));
+        groups.get(year).append(timelineCard(asset, index));
+      });
+      $("timeline").replaceChildren(...[...groups].map(([year, list]) => {
+        const group = element("section", null, "timeline-group");
+        group.append(element("h3", year ? year + "年" : "購入日未登録"), list);
+        return group;
+      }));
     }
 
     function render() {
@@ -197,7 +454,7 @@
         cell(row, asset.disposedOn, "date");
         cell(row, Number.isFinite(asset.salePrice) ? yen.format(asset.salePrice) : null, "number");
         cell(row, asset.notes, "notes");
-        attachmentLinks(cell(row, null), asset.images);
+        cell(row, null).replaceChildren(thumbnail(asset));
         rows.append(row);
       }
       $("rows").replaceChildren(rows);
@@ -206,9 +463,12 @@
       $("empty").hidden = visible.length !== 0;
       $("empty").textContent = assets.length ? "条件に一致する資産がありません。" : snapshot
         ? "固定資産一覧にデータがありません。" : "「データ読み込み」でAirtableの一覧を取得できます。";
+      renderOverview(visible);
+      renderTimeline(visible);
     }
 
     function useSnapshot(data) {
+      if ($("gallery").open) $("gallery").close();
       snapshot = data;
       const assets = snapshot?.assets ?? [];
       syncOptions("category", assets.map((asset) => asset.category));
@@ -291,6 +551,23 @@
     $("search").addEventListener("input", render);
     $("category").addEventListener("change", render);
     $("status").addEventListener("change", render);
+    $("gallery-prev").addEventListener("click", () => showGalleryImage(galleryIndex - 1));
+    $("gallery-next").addEventListener("click", () => showGalleryImage(galleryIndex + 1));
+    $("gallery-image").addEventListener("error", () => {
+      if (!galleryImages.length) return;
+      $("gallery-image").hidden = true;
+      $("gallery-error").hidden = false;
+    });
+    $("gallery").addEventListener("close", () => {
+      galleryImages = [];
+      $("gallery-image").removeAttribute("src");
+      $("gallery-original").removeAttribute("href");
+    });
+    $("gallery").addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      showGalleryImage(galleryIndex + (event.key === "ArrowLeft" ? -1 : 1));
+    });
 
     if (preview) {
       $("login").hidden = true;
