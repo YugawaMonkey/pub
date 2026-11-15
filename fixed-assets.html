@@ -65,6 +65,10 @@
     .controls .filters { justify-content: flex-start; }
     .controls input { width: min(280px, 100%); }
     .controls .message { padding: 10px 0 0; }
+    .tabs { display: flex; gap: 8px; margin-top: 18px; border-bottom: 1px solid var(--line); }
+    .tab { min-width: 95px; padding: 10px 18px; border: 0; border-bottom: 3px solid transparent; border-radius: 8px 8px 0 0; background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
+    .tab:hover { background: #f0eef8; }
+    .tab[aria-selected="true"] { border-bottom-color: var(--blue); background: #eceffd; color: #263eaa; }
     .metrics, .charts { display: grid; gap: 14px; margin-top: 16px; }
     .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -148,30 +152,11 @@
         </div>
         <p class="message" id="message" role="status" hidden></p>
       </section>
-      <section id="overview" aria-label="資産の集計" hidden>
-        <div class="metrics">
-          <article class="panel metric"><h3>保有資産の購入総額</h3><strong id="held-total">—</strong><p class="muted" id="held-note"></p></article>
-          <article class="panel metric"><h3>処分済み資産の購入総額</h3><strong id="disposed-total">—</strong><p class="muted" id="disposed-note"></p></article>
-          <article class="panel metric"><h3>売却価格の総額</h3><strong id="sale-total">—</strong><p class="muted" id="sale-note"></p></article>
-        </div>
-        <div class="charts">
-          <section class="panel chart" aria-labelledby="category-title">
-            <h2 id="category-title">種別ごとの保有資産購入額</h2>
-            <ul id="category-bars" class="bars"></ul>
-            <p id="category-note" class="muted"></p>
-          </section>
-          <section class="panel chart" aria-labelledby="sale-title">
-            <h2 id="sale-title">売却資産の購入額と売却額</h2>
-            <ul id="sale-bars" class="bars"></ul>
-            <p id="sale-comparison-note" class="muted"></p>
-          </section>
-        </div>
-      </section>
-      <section id="timeline-panel" class="panel timeline-panel" aria-labelledby="timeline-title" hidden>
-        <h2 id="timeline-title">購入タイムライン</h2>
-        <div id="timeline"></div>
-      </section>
-      <section class="panel" aria-labelledby="table-title">
+      <div class="tabs" role="tablist" aria-label="固定資産の表示">
+        <button class="tab" id="list-tab" type="button" role="tab" aria-selected="true" aria-controls="list-view">一覧</button>
+        <button class="tab" id="summary-tab" type="button" role="tab" aria-selected="false" aria-controls="summary-view" tabindex="-1">集計</button>
+      </div>
+      <section class="panel" id="list-view" role="tabpanel" aria-labelledby="list-tab" tabindex="0">
         <div class="panel-top">
           <div><h2 id="table-title">固定資産一覧</h2><p id="count" class="muted">0件</p></div>
         </div>
@@ -183,6 +168,32 @@
           </table>
         </div>
       </section>
+      <div id="summary-view" role="tabpanel" aria-labelledby="summary-tab" tabindex="0" hidden>
+        <p id="summary-empty" class="panel empty">「データ読み込み」でAirtableの一覧を取得できます。</p>
+        <section id="overview" aria-label="資産の集計" hidden>
+          <div class="metrics">
+            <article class="panel metric"><h3>保有資産の購入総額</h3><strong id="held-total">—</strong><p class="muted" id="held-note"></p></article>
+            <article class="panel metric"><h3>処分済み資産の購入総額</h3><strong id="disposed-total">—</strong><p class="muted" id="disposed-note"></p></article>
+            <article class="panel metric"><h3>売却価格の総額</h3><strong id="sale-total">—</strong><p class="muted" id="sale-note"></p></article>
+          </div>
+          <div class="charts">
+            <section class="panel chart" aria-labelledby="category-title">
+              <h2 id="category-title">種別ごとの保有資産購入額</h2>
+              <ul id="category-bars" class="bars"></ul>
+              <p id="category-note" class="muted"></p>
+            </section>
+            <section class="panel chart" aria-labelledby="sale-title">
+              <h2 id="sale-title">売却資産の購入額と売却額</h2>
+              <ul id="sale-bars" class="bars"></ul>
+              <p id="sale-comparison-note" class="muted"></p>
+            </section>
+          </div>
+        </section>
+        <section id="timeline-panel" class="panel timeline-panel" aria-labelledby="timeline-title" hidden>
+          <h2 id="timeline-title">購入タイムライン</h2>
+          <div id="timeline"></div>
+        </section>
+      </div>
     </div>
   </main>
   <dialog id="gallery" class="gallery" aria-labelledby="gallery-title">
@@ -460,9 +471,12 @@
       $("rows").replaceChildren(rows);
       $("count").textContent = `${visible.length}件 / 全${assets.length}件`;
       $("table").hidden = visible.length === 0;
-      $("empty").hidden = visible.length !== 0;
-      $("empty").textContent = assets.length ? "条件に一致する資産がありません。" : snapshot
+      const emptyText = assets.length ? "条件に一致する資産がありません。" : snapshot
         ? "固定資産一覧にデータがありません。" : "「データ読み込み」でAirtableの一覧を取得できます。";
+      for (const id of ["empty", "summary-empty"]) {
+        $(id).hidden = visible.length !== 0;
+        $(id).textContent = emptyText;
+      }
       renderOverview(visible);
       renderTimeline(visible);
     }
@@ -545,6 +559,32 @@
       } finally {
         if (generation === sessionGeneration) setButton(false);
       }
+    }
+
+    const tabs = [$("list-tab"), $("summary-tab")];
+    function selectTab(selected, moveFocus = false) {
+      for (const tab of tabs) {
+        const active = tab === selected;
+        tab.setAttribute("aria-selected", String(active));
+        tab.tabIndex = active ? 0 : -1;
+        $(tab.getAttribute("aria-controls")).hidden = !active;
+      }
+      if (moveFocus) selected.focus();
+    }
+    for (const [index, tab] of tabs.entries()) {
+      tab.addEventListener("click", () => selectTab(tab));
+      tab.addEventListener("keydown", (event) => {
+        let target;
+        switch (event.key) {
+          case "ArrowLeft":
+          case "ArrowRight": target = tabs[1 - index]; break;
+          case "Home": target = tabs[0]; break;
+          case "End": target = tabs[1]; break;
+          default: return;
+        }
+        event.preventDefault();
+        selectTab(target, true);
+      });
     }
 
     $("load").addEventListener("click", refresh);
