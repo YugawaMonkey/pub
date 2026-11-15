@@ -55,6 +55,7 @@
     tbody tr:last-child > * { border-bottom: none; }
     tbody tr:hover { background: #fbfaff; }
     tbody th { min-width: 135px; }
+    .mobile-label { display: none; }
     .number, .date { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .number { text-align: right; }
     .notes { min-width: 145px; max-width: 260px; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -112,6 +113,34 @@
     .gallery-original { display: inline-block; margin-bottom: 10px; color: #263eaa; }
     .gallery-actions .btn:disabled { cursor: default; }
     .empty { padding: 25px 20px; color: var(--muted); }
+    @media (max-width: 960px) {
+      .table-scroll { position: relative; overflow: visible; }
+      .table-scroll table, .table-scroll tbody { display: block; min-width: 0; }
+      .table-scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+      .table-scroll tbody { display: grid; gap: 10px; padding: 12px; }
+      .table-scroll tbody tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .table-scroll tbody :is(th, td) {
+        min-width: 0;
+        max-width: none;
+        padding: 0;
+        border: 0;
+        text-align: left;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .table-scroll tbody :is(th, .notes, .asset-image) { grid-column: 1 / -1; }
+      .table-scroll tbody th { font-size: 1rem; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+      .table-scroll .notes .cell-value { white-space: pre-wrap; }
+      .table-scroll .tag { white-space: normal; }
+      .mobile-label { display: block; margin-bottom: 2px; color: var(--muted); font-size: .79rem; }
+    }
     @media (max-width: 640px) {
       .wrap { width: calc(100% - 24px); }
       main { padding-block: 16px 24px; }
@@ -162,9 +191,22 @@
         </div>
         <p class="empty" id="empty">「データ読み込み」でAirtableの一覧を取得できます。</p>
         <div class="table-scroll" id="table" tabindex="0" role="region" aria-labelledby="table-title" hidden>
-          <table aria-labelledby="table-title">
-            <thead><tr><th scope="col">名称</th><th scope="col">種別</th><th scope="col">使用状況</th><th scope="col">購入日</th><th scope="col" class="number">購入価格</th><th scope="col">処分方式</th><th scope="col">処分日</th><th scope="col" class="number">売却価格</th><th scope="col">詳細</th><th scope="col">画像</th></tr></thead>
-            <tbody id="rows"></tbody>
+          <table role="table" aria-labelledby="table-title">
+            <thead role="rowgroup">
+              <tr id="asset-columns" role="row">
+                <th scope="col" role="columnheader">名称</th>
+                <th scope="col" role="columnheader">種別</th>
+                <th scope="col" role="columnheader">使用状況</th>
+                <th scope="col" role="columnheader">購入日</th>
+                <th scope="col" role="columnheader" class="number">購入価格</th>
+                <th scope="col" role="columnheader">処分方式</th>
+                <th scope="col" role="columnheader">処分日</th>
+                <th scope="col" role="columnheader" class="number">売却価格</th>
+                <th scope="col" role="columnheader">詳細</th>
+                <th scope="col" role="columnheader">画像</th>
+              </tr>
+            </thead>
+            <tbody id="rows" role="rowgroup"></tbody>
           </table>
         </div>
       </section>
@@ -212,6 +254,7 @@
   <script>
     "use strict";
     const $ = (id) => document.getElementById(id);
+    const assetColumns = Array.from($("asset-columns").cells, (header) => header.textContent);
     const preview = new URLSearchParams(location.search).get("preview") === "1";
     const yen = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" });
     const dateTime = new Intl.DateTimeFormat("ja-JP", { dateStyle: "medium", timeStyle: "short" });
@@ -252,12 +295,19 @@
     }
 
     function cell(row, value, className = "", heading = false) {
-      const element = document.createElement(heading ? "th" : "td");
-      if (heading) element.scope = "row";
-      element.className = className;
-      element.textContent = value ?? "—";
-      row.append(element);
-      return element;
+      const tableCell = element(heading ? "th" : "td", null, className);
+      tableCell.setAttribute("role", heading ? "rowheader" : "cell");
+      if (heading) {
+        tableCell.scope = "row";
+      } else {
+        const label = element("span", assetColumns[row.cells.length], "mobile-label");
+        label.setAttribute("aria-hidden", "true");
+        tableCell.append(label);
+      }
+      const content = element("span", value ?? "—", "cell-value");
+      tableCell.append(content);
+      row.append(tableCell);
+      return content;
     }
 
     function validImages(images) {
@@ -449,6 +499,7 @@
       const rows = document.createDocumentFragment();
       for (const asset of visible) {
         const row = document.createElement("tr");
+        row.setAttribute("role", "row");
         cell(row, asset.name, "", true);
         cell(row, asset.category);
         const statusCell = cell(row, asset.status);
@@ -465,7 +516,7 @@
         cell(row, asset.disposedOn, "date");
         cell(row, Number.isFinite(asset.salePrice) ? yen.format(asset.salePrice) : null, "number");
         cell(row, asset.notes, "notes");
-        cell(row, null).replaceChildren(thumbnail(asset));
+        cell(row, null, "asset-image").replaceChildren(thumbnail(asset));
         rows.append(row);
       }
       $("rows").replaceChildren(rows);
