@@ -59,27 +59,24 @@
     .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
     .toolbar { display: grid; grid-template-columns: minmax(190px, 1fr) repeat(3, auto); gap: 10px; padding: 13px; border-bottom: 1px solid var(--line); }
     input, select, textarea { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid #cec9dc; background: var(--paper); color: var(--ink); }
-    .table-scroll { overflow-x: auto; }
-    table { width: 100%; min-width: 900px; border-collapse: collapse; text-align: left; }
-    th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-    th { background: #f5f3fa; color: #514965; font-size: 12px; white-space: nowrap; }
-    td { font-size: 13px; }
-    tr:last-child td { border-bottom: 0; }
-    tbody tr:hover { background: #fbfaff; }
-    td:first-child { min-width: 185px; max-width: 305px; overflow-wrap: anywhere; }
-    .service { border: 0; background: transparent; color: #423282; text-align: left; padding: 2px 0; font-weight: 800; }
-    .service:hover { text-decoration: underline; }
-    .service-meta { display: block; color: var(--muted); font-size: 12px; }
-    .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-    .tone-active { background: #dff4e9; color: #1e6049; }
-    .tone-trial { background: #efe9fe; color: #54378d; }
-    .tone-ending { background: #fff0d5; color: #754b15; }
-    .tone-done { background: #eeedf2; color: #4d485c; }
-    .tone-license { background: #dff0f8; color: #285a73; }
-    .date, .money { white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .missing { color: var(--muted); }
-    .mobile-label { display: none; }
-    .table-foot { border-top: 1px solid var(--line); padding: 8px 13px; color: var(--muted); font-size: 12px; }
+    .contract-groups { padding: 18px; }
+    .contract-group + .contract-group { margin-top: 22px; }
+    .contract-group h3 { margin-bottom: 9px; font-size: 15px; }
+    .contract-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .contract-card {
+      display: grid; align-content: start; gap: 4px; min-width: 0; min-height: 84px; padding: 12px 15px;
+      background: var(--card-bg); border: 1px solid var(--card-line); border-radius: 12px;
+      color: var(--ink); text-align: left; overflow-wrap: anywhere;
+    }
+    .contract-card:hover { border-color: var(--card-accent); }
+    .contract-card strong { font-size: 16px; }
+    .contract-card span { color: var(--card-accent); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .contract-group.ending { --card-bg: #fff7e6; --card-line: #e9d8b6; --card-accent: #704c1b; }
+    .contract-group.active { --card-bg: #e8f6ed; --card-line: #bddfc9; --card-accent: #245f43; }
+    .contract-group.trial { --card-bg: #f3edff; --card-line: #dfd0f5; --card-accent: #54378d; }
+    .contract-group.license { --card-bg: #e7f5fc; --card-line: #c3e1f0; --card-accent: #285a73; }
+    .contract-group.done { --card-bg: #f1f0f3; --card-line: #dbd8e1; --card-accent: #514b61; }
+    .list-foot { border-top: 1px solid var(--line); padding: 8px 13px; color: var(--muted); font-size: 12px; }
     #notice { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; background: #e8f4ec; color: #22533c; }
     #notice.warn { background: #fff0db; color: #6f441d; }
     dialog { width: min(620px, calc(100% - 24px)); max-height: calc(100% - 24px); padding: 0; border: 1px solid var(--line); border-radius: 17px; color: var(--ink); box-shadow: 0 24px 75px #17142f38; }
@@ -106,20 +103,9 @@
       .metric { padding: 12px; }
       .metric strong { font-size: 22px; }
     }
-    @media (max-width: 960px) {
-      .table-scroll { position: relative; overflow: visible; }
-      .table-scroll table, .table-scroll tbody { display: block; min-width: 0; }
-      .table-scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-      .table-scroll tbody { display: grid; gap: 10px; padding: 10px; }
-      .table-scroll tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; padding: 12px; border: 1px solid var(--line); border-radius: 11px; }
-      .table-scroll thead tr { display: table-row; }
-      .table-scroll td, .table-scroll td:first-child { min-width: 0; max-width: none; padding: 0; border: 0; white-space: normal; overflow-wrap: anywhere; }
-      .table-scroll .service-cell, .table-scroll .empty-cell { grid-column: 1 / -1; }
-      .table-scroll .service { display: block; min-height: 44px; font-size: 16px; overflow-wrap: anywhere; max-width: 100%; }
-      .table-scroll .mobile-label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }
-      .table-scroll .pill { white-space: normal; }
-    }
     @media (max-width: 760px) {
+      .contract-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .contract-groups { padding: 12px; }
       .toolbar input[type="search"] { grid-column: 1 / -1; }
       .toolbar select, .toolbar input { min-height: 44px; font-size: 16px; }
       dialog { position: fixed; inset: auto 0 var(--editor-bottom, 0px); margin: 0; width: 100%; max-width: none; max-height: 100%; border-radius: 18px 18px 0 0; }
@@ -136,6 +122,7 @@
       .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
       .metric:last-child { grid-column: 1 / -1; }
       .queue { grid-template-columns: 1fr; }
+      .contract-cards { grid-template-columns: 1fr; }
     }
     [hidden] { display: none !important; }
     button:disabled { cursor: wait; opacity: .55; }
@@ -199,17 +186,12 @@
           <select id="date-filter" aria-label="日付の登録状況で絞り込む">
             <option value="">すべての日付</option><option value="missing">更新日・解約期限ともに未登録</option>
           </select>
-          <select id="sort" aria-label="並べ替え">
+          <select id="sort" aria-label="契約状況ごとの並べ替え">
             <option value="default">期限が近い順</option><option value="name">サービス名順</option><option value="amount">月額換算が高い順</option>
           </select>
         </div>
-        <div class="table-scroll" tabindex="0" aria-label="契約一覧表">
-          <table role="table">
-            <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">サービス</th><th role="columnheader" scope="col">契約状況</th><th role="columnheader" scope="col">料金・周期</th><th role="columnheader" scope="col">次回更新日</th><th role="columnheader" scope="col">解約期限</th><th role="columnheader" scope="col">利用終了日</th><th role="columnheader" scope="col">支払いタグ</th></tr></thead>
-            <tbody id="rows" role="rowgroup"></tbody>
-          </table>
-        </div>
-        <p class="table-foot" id="count" aria-live="polite"></p>
+        <div class="contract-groups" id="contract-groups"></div>
+        <p class="list-foot" id="count" aria-live="polite"></p>
       </div>
     </section>
     </div>
@@ -359,16 +341,23 @@
       }
     }
     
-    function listCell(label, value, className) {
-      const cell = node("td", undefined, className);
-      cell.setAttribute("role", "cell");
-      const heading = node("span", label, "mobile-label");
-      heading.setAttribute("aria-hidden", "true");
-      cell.append(heading, value);
-      return cell;
+    function contractCard(record) {
+      const card = node("button", undefined, "contract-card");
+      card.type = "button";
+      const cycle = record.cycle === "once" ? "（買い切り）" : record.cycle ? " / " + cycles.get(record.cycle) : "";
+      const price = record.amount === null
+        ? (record.notes.includes("無料トライアル") ? "無料トライアル" : "料金未登録")
+        : yen.format(record.amount) + cycle;
+      card.append(node("strong", record.name), node("span", price));
+      if (statuses.get(record.status) === "ending") {
+        const end = record.end ? record.end.replaceAll("-", "/") : "未登録";
+        card.append(node("span", "利用終了日 " + end));
+      }
+      card.addEventListener("click", () => openEditor(record));
+      return card;
     }
 
-    function renderRows() {
+    function renderContracts() {
       const query = $("#search").value.trim().normalize("NFKC").toLocaleLowerCase("ja");
       const status = $("#status-filter").value;
       const date = $("#date-filter").value;
@@ -382,44 +371,24 @@
         const byName = collator.compare(a.name, b.name);
         if (sort === "name") return byName;
         if (sort === "amount") return (monthly(b) ?? -1) - (monthly(a) ?? -1) || byName;
-        return Number(tracked.has(b.status)) - Number(tracked.has(a.status)) ||
-          firstDate(a).localeCompare(firstDate(b)) || byName;
+        return firstDate(a).localeCompare(firstDate(b)) || byName;
       });
-      const tbody = $("#rows");
-      tbody.replaceChildren();
-      if (!visible.length) {
-        const cell = node("td", "条件に一致する契約はありません。", "missing empty-cell");
-        cell.colSpan = 7;
-        cell.setAttribute("role", "cell");
-        const row = node("tr");
-        row.setAttribute("role", "row");
-        row.append(cell);
-        tbody.append(row);
+      const container = $("#contract-groups");
+      container.replaceChildren();
+      const groups = ["契約終了予定", "継続契約中", "一時契約中", "永続ライセンス", "解約済み"];
+      for (const status of groups) {
+        const entries = visible.filter((record) => record.status === status);
+        if (!entries.length) continue;
+        const group = node("div", undefined, "contract-group " + statuses.get(status));
+        const cards = node("div", undefined, "contract-cards");
+        cards.append(...entries.map(contractCard));
+        group.append(node("h3", status), cards);
+        container.append(group);
       }
-      for (const record of visible) {
-        const row = node("tr");
-        row.setAttribute("role", "row");
-        const service = node("td", undefined, "service-cell");
-        service.setAttribute("role", "cell");
-        const edit = node("button", record.name, "service");
-        edit.type = "button";
-        edit.setAttribute("aria-label", record.name + "を編集");
-        edit.addEventListener("click", () => openEditor(record));
-        service.append(edit);
-        if (record.platform) service.append(node("span", record.platform, "service-meta"));
-        const statusCell = listCell("契約状況", node("span", record.status, "pill tone-" + statuses.get(record.status)));
-        const cycle = record.cycle === "once" ? "（買い切り）" : record.cycle ? " / " + cycles.get(record.cycle) : "";
-        const price = record.amount === null ? (record.notes.includes("無料トライアル") ? "無料トライアル" : "—") : yen.format(record.amount) + cycle;
-        row.append(service, statusCell, listCell("料金・周期", price, record.amount === null ? "missing" : "money"));
-        for (const [key, label] of [["renew", "次回更新日"], ["deadline", "解約期限"], ["end", "利用終了日"]]) {
-          row.append(listCell(label, record[key] ? record[key].replaceAll("-", "/") : "—", record[key] ? "date" : "missing"));
-        }
-        row.append(listCell("支払いタグ", record.payment.replaceAll(",", "、") || "—"));
-        tbody.append(row);
-      }
+      if (!visible.length) container.append(node("p", "条件に一致する契約はありません。", "empty"));
       $("#count").textContent = `${visible.length} / ${records.length} 件表示`;
     }
-    
+
     function render() {
       const today = dateString();
       $("#today").dateTime = today;
@@ -436,7 +405,7 @@
       $("#active").replaceChildren(document.createTextNode(active.length), node("span", "件", "metric-unit"));
       $("#missing-dates").replaceChildren(document.createTextNode(active.filter(missingDates).length), node("span", "件", "metric-unit"));
       renderQueue(active, today);
-      renderRows();
+      renderContracts();
     }
     
     
@@ -708,8 +677,8 @@
     editor.addEventListener("cancel", (event) => { if (busy) event.preventDefault(); });
     $("#restore").addEventListener("click", () => $("#backup-file").click());
     $("#refresh").addEventListener("click", () => { void refresh({ announce: true }); });
-    $("#search").addEventListener("input", renderRows);
-    for (const id of ["status-filter", "date-filter", "sort"]) $("#" + id).addEventListener("change", renderRows);
+    $("#search").addEventListener("input", renderContracts);
+    for (const id of ["status-filter", "date-filter", "sort"]) $("#" + id).addEventListener("change", renderContracts);
     window.addEventListener("focus", () => { if (account && !loading && !editor.open) void refresh(); });
     
     function initialize() {
