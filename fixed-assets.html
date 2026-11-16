@@ -23,7 +23,6 @@
     .wrap { width: min(1220px, calc(100% - 48px)); margin-inline: auto; }
     header { background: var(--paper); border-bottom: 1px solid var(--line); }
     .top { min-height: 71px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-    .brand { font-weight: 800; letter-spacing: .025em; }
     .btn { display: inline-block; border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; color: var(--ink); background: var(--paper); font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
     .btn:hover { background: #f1edf8; }
     .primary { background: var(--blue); color: white; border-color: var(--blue); }
@@ -207,7 +206,7 @@
   </style>
 </head>
 <body>
-  <header><div class="wrap top"><span class="brand">MY PORTAL</span><a class="btn" href="./index.html">ポータルに戻る</a></div></header>
+  <header><div class="wrap top"><a class="btn" href="./index.html">MY PORTAL</a></div></header>
   <main class="wrap">
     <section class="panel login" id="login" aria-labelledby="login-title">
       <h1 id="login-title">固定資産管理</h1>
