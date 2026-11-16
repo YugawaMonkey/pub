@@ -55,7 +55,7 @@
     tbody tr:last-child > * { border-bottom: none; }
     tbody tr:hover { background: #fbfaff; }
     tbody th { min-width: 135px; }
-    .mobile-label { display: none; }
+    .mobile-label, .asset-disclosure { display: none; }
     .number, .date { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .number { text-align: right; }
     .notes { min-width: 145px; max-width: 260px; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -134,12 +134,12 @@
       .table-scroll { position: relative; overflow: visible; }
       .table-scroll table, .table-scroll tbody { display: block; min-width: 0; }
       .table-scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-      .table-scroll tbody { display: grid; gap: 10px; padding: 12px; }
+      .table-scroll tbody { display: grid; gap: 6px; padding: 10px; }
       .table-scroll tbody tr {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px 16px;
-        padding: 13px;
+        padding: 0 12px;
         border: 1px solid var(--line);
         border-radius: 10px;
       }
@@ -153,7 +153,38 @@
         overflow-wrap: anywhere;
       }
       .table-scroll tbody :is(th, .notes, .asset-image) { grid-column: 1 / -1; }
-      .table-scroll tbody th { font-size: 1rem; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+      .table-scroll tbody th { font-size: 1rem; }
+      .table-scroll tbody tr:not(.asset-open) > td { display: none; }
+      .table-scroll tbody .asset-open { padding-bottom: 12px; }
+      .table-scroll tbody .asset-open > th { border-bottom: 1px solid var(--line); }
+      .table-scroll .asset-label { display: none; }
+      .asset-disclosure {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        min-height: 44px;
+        padding: 7px 3px;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+      }
+      .asset-disclosure::after {
+        content: "";
+        flex: none;
+        width: 8px;
+        height: 8px;
+        margin-right: 3px;
+        border: solid var(--muted);
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      .asset-disclosure[aria-expanded="true"]::after { transform: rotate(225deg); }
       .table-scroll .notes .cell-value { white-space: pre-wrap; }
       .table-scroll .tag { white-space: normal; }
       .mobile-label { display: block; margin-bottom: 2px; color: var(--muted); font-size: .79rem; }
@@ -633,7 +664,16 @@
       for (const asset of visible) {
         const row = document.createElement("tr");
         row.setAttribute("role", "row");
-        cell(row, asset.name, "", true);
+        const title = asset.name || "名称未登録";
+        const heading = cell(row, null, "", true);
+        const disclosure = element("button", title, "asset-disclosure");
+        disclosure.type = "button";
+        disclosure.setAttribute("aria-expanded", "false");
+        disclosure.addEventListener("click", () => {
+          const open = row.classList.toggle("asset-open");
+          disclosure.setAttribute("aria-expanded", String(open));
+        });
+        heading.replaceChildren(element("span", title, "asset-label"), disclosure);
         cell(row, asset.category);
         const statusCell = cell(row, asset.status);
         if (asset.status) {
